@@ -1,0 +1,62 @@
+{
+  "name": "FighterRating",
+  "type": "object",
+  "properties": {
+    "fighter_id": {
+      "type": "string"
+    },
+    "fighter_name": {
+      "type": "string"
+    },
+    "discipline": {
+      "type": "string"
+    },
+    "striking_rating": {
+      "type": "number",
+      "description": "0-100 striking aspect rating"
+    },
+    "wrestling_rating": {
+      "type": "number",
+      "description": "0-100 wrestling/takedown rating"
+    },
+    "grappling_rating": {
+      "type": "number",
+      "description": "0-100 grappling/submission rating"
+    },
+    "striking_token_cost": {
+      "type": "number"
+    },
+    "wrestling_token_cost": {
+      "type": "number"
+    },
+    "grappling_token_cost": {
+      "type": "number"
+    },
+    "ko_rate": {
+      "type": "number",
+      "description": "KO/TKO finish percentage"
+    },
+    "sub_rate": {
+      "type": "number",
+      "description": "Submission finish percentage"
+    },
+    "td_accuracy": {
+      "type": "number",
+      "description": "Takedown accuracy %"
+    },
+    "sig_strikes_per_min": {
+      "type": "number"
+    },
+    "last_updated": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "data_source_notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "fighter_id",
+    "fighter_name"
+  ]
+}

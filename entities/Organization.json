@@ -1,0 +1,82 @@
+{
+  "name": "Organization",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "short_name": {
+      "type": "string",
+      "description": "e.g. UFC, ONE, IBJJF"
+    },
+    "discipline": {
+      "type": "string",
+      "enum": [
+        "MMA",
+        "Boxing",
+        "BJJ",
+        "Muay Thai",
+        "Kickboxing",
+        "Wrestling",
+        "Judo",
+        "Karate",
+        "Taekwondo",
+        "Kung Fu / Wushu",
+        "Submission Grappling",
+        "Sambo",
+        "Sumo",
+        "Bare-Knuckle Boxing",
+        "Lethwei"
+      ]
+    },
+    "country": {
+      "type": "string"
+    },
+    "website": {
+      "type": "string"
+    },
+    "logo_url": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "is_tracked": {
+      "type": "boolean",
+      "default": true
+    },
+    "tier": {
+      "type": "string",
+      "enum": [
+        "Major",
+        "Regional",
+        "Minor"
+      ],
+      "default": "Major"
+    },
+    "official_events_url": {
+      "type": "string",
+      "description": "URL for event calendar"
+    },
+    "official_rankings_url": {
+      "type": "string"
+    },
+    "api_available": {
+      "type": "boolean",
+      "default": false
+    },
+    "api_notes": {
+      "type": "string"
+    },
+    "thesportsdb_id": {
+      "type": "string"
+    },
+    "data_source_id": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "name",
+    "discipline"
+  ]
+}

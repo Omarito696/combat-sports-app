@@ -1,0 +1,242 @@
+{
+  "name": "Fighter",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "nickname": {
+      "type": "string"
+    },
+    "discipline": {
+      "type": "string",
+      "enum": [
+        "MMA",
+        "Boxing",
+        "BJJ",
+        "Muay Thai",
+        "Kickboxing",
+        "Wrestling",
+        "Judo",
+        "Karate",
+        "Taekwondo",
+        "Kung Fu / Wushu",
+        "Submission Grappling",
+        "Sambo",
+        "Sumo",
+        "Bare-Knuckle Boxing",
+        "Lethwei"
+      ]
+    },
+    "nationality": {
+      "type": "string"
+    },
+    "country_code": {
+      "type": "string"
+    },
+    "weight_class": {
+      "type": "string"
+    },
+    "wins": {
+      "type": "number",
+      "default": 0
+    },
+    "losses": {
+      "type": "number",
+      "default": 0
+    },
+    "draws": {
+      "type": "number",
+      "default": 0
+    },
+    "no_contests": {
+      "type": "number",
+      "default": 0
+    },
+    "preferred_profile_image_url": {
+      "type": "string"
+    },
+    "image_url": {
+      "type": "string"
+    },
+    "image_source": {
+      "type": "string"
+    },
+    "image_source_type": {
+      "type": "string",
+      "enum": [
+        "official_org",
+        "media_day",
+        "publicity_headshot",
+        "sports_db",
+        "wikipedia",
+        "wikimedia",
+        "unknown"
+      ]
+    },
+    "image_confidence": {
+      "type": "string",
+      "enum": [
+        "approved",
+        "auto",
+        "unverified",
+        "rejected"
+      ],
+      "default": "unverified"
+    },
+    "image_last_verified_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "image_pending_review": {
+      "type": "boolean",
+      "default": false
+    },
+    "record_source_url": {
+      "type": "string"
+    },
+    "record_source_type": {
+      "type": "string",
+      "enum": [
+        "official_org",
+        "sports_db",
+        "wikipedia",
+        "manual",
+        "unknown"
+      ]
+    },
+    "record_confidence": {
+      "type": "string",
+      "enum": [
+        "high",
+        "medium",
+        "low"
+      ],
+      "default": "low"
+    },
+    "record_last_verified_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "weight_source_url": {
+      "type": "string"
+    },
+    "weight_source_type": {
+      "type": "string",
+      "enum": [
+        "official_org",
+        "sports_db",
+        "wikipedia",
+        "manual",
+        "unknown"
+      ]
+    },
+    "ranking": {
+      "type": "number"
+    },
+    "biography": {
+      "type": "string"
+    },
+    "date_of_birth": {
+      "type": "string",
+      "format": "date"
+    },
+    "height_cm": {
+      "type": "number"
+    },
+    "reach_cm": {
+      "type": "number"
+    },
+    "stance": {
+      "type": "string",
+      "enum": [
+        "Orthodox",
+        "Southpaw",
+        "Switch",
+        "Unknown"
+      ]
+    },
+    "organization": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Active",
+        "Retired",
+        "Inactive",
+        "Unknown"
+      ],
+      "default": "Active"
+    },
+    "wikidata_id": {
+      "type": "string"
+    },
+    "wikipedia_url": {
+      "type": "string"
+    },
+    "thesportsdb_id": {
+      "type": "string"
+    },
+    "ufc_url": {
+      "type": "string"
+    },
+    "one_url": {
+      "type": "string"
+    },
+    "tapology_url": {
+      "type": "string"
+    },
+    "sherdog_url": {
+      "type": "string"
+    },
+    "boxrec_url": {
+      "type": "string"
+    },
+    "ibjjf_url": {
+      "type": "string"
+    },
+    "adcc_url": {
+      "type": "string"
+    },
+    "official_website_url": {
+      "type": "string"
+    },
+    "data_quality": {
+      "type": "string",
+      "enum": [
+        "verified",
+        "auto",
+        "stub"
+      ],
+      "default": "stub"
+    },
+    "data_confidence": {
+      "type": "string",
+      "enum": [
+        "high",
+        "medium",
+        "low"
+      ],
+      "default": "low"
+    },
+    "data_warnings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "needs_admin_review": {
+      "type": "boolean",
+      "default": false
+    },
+    "last_data_refresh": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "name",
+    "discipline"
+  ]
+}

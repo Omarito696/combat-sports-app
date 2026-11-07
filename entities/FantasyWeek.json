@@ -1,0 +1,48 @@
+{
+  "name": "FantasyWeek",
+  "type": "object",
+  "properties": {
+    "week_number": {
+      "type": "number"
+    },
+    "year": {
+      "type": "number"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "open",
+        "locked",
+        "scoring",
+        "completed"
+      ],
+      "default": "open"
+    },
+    "eligible_fight_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Fight IDs eligible this week"
+    },
+    "token_budget": {
+      "type": "number",
+      "default": 100,
+      "description": "Total tokens users can spend"
+    }
+  },
+  "required": [
+    "week_number",
+    "year",
+    "start_date",
+    "end_date"
+  ]
+}

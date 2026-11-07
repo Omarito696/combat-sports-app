@@ -1,0 +1,90 @@
+{
+  "name": "Event",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "discipline": {
+      "type": "string",
+      "enum": [
+        "MMA",
+        "Boxing",
+        "BJJ",
+        "Muay Thai",
+        "Kickboxing",
+        "Wrestling",
+        "Judo",
+        "Karate",
+        "Taekwondo",
+        "Kung Fu / Wushu"
+      ]
+    },
+    "date": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "venue": {
+      "type": "string"
+    },
+    "location": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "upcoming",
+        "live",
+        "completed"
+      ],
+      "default": "upcoming"
+    },
+    "image_url": {
+      "type": "string"
+    },
+    "organization": {
+      "type": "string"
+    },
+    "date_source_url": {
+      "type": "string"
+    },
+    "date_source_type": {
+      "type": "string",
+      "enum": [
+        "official_org",
+        "sports_db",
+        "news",
+        "manual",
+        "unknown"
+      ]
+    },
+    "card_source_url": {
+      "type": "string"
+    },
+    "card_source_type": {
+      "type": "string",
+      "enum": [
+        "official_org",
+        "sports_db",
+        "news",
+        "manual",
+        "unknown"
+      ]
+    },
+    "event_confidence": {
+      "type": "string",
+      "enum": [
+        "high",
+        "medium",
+        "low"
+      ],
+      "default": "low"
+    }
+  },
+  "required": [
+    "name",
+    "discipline",
+    "date",
+    "status"
+  ]
+}

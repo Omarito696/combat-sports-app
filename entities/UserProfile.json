@@ -1,0 +1,84 @@
+{
+  "name": "UserProfile",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string"
+    },
+    "username": {
+      "type": "string"
+    },
+    "avatar_url": {
+      "type": "string"
+    },
+    "favorite_discipline": {
+      "type": "string",
+      "enum": [
+        "MMA",
+        "Boxing",
+        "BJJ",
+        "Muay Thai",
+        "Kickboxing",
+        "Wrestling",
+        "Judo",
+        "Karate",
+        "Taekwondo",
+        "Kung Fu / Wushu"
+      ]
+    },
+    "favorite_fighter_id": {
+      "type": "string"
+    },
+    "favorite_fighter_name": {
+      "type": "string"
+    },
+    "followed_fighter_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "followed_org_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "total_fantasy_points": {
+      "type": "number",
+      "default": 0
+    },
+    "total_prediction_points": {
+      "type": "number",
+      "default": 0
+    },
+    "division_tier": {
+      "type": "string",
+      "enum": [
+        "Bronze",
+        "Silver",
+        "Gold",
+        "Elite"
+      ],
+      "default": "Bronze"
+    },
+    "lineups_submitted": {
+      "type": "number",
+      "default": 0
+    },
+    "predictions_made": {
+      "type": "number",
+      "default": 0
+    },
+    "correct_predictions": {
+      "type": "number",
+      "default": 0
+    },
+    "bio": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "user_id"
+  ]
+}

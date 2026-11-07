@@ -1,0 +1,52 @@
+{
+  "name": "Prediction",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string"
+    },
+    "fight_id": {
+      "type": "string"
+    },
+    "event_id": {
+      "type": "string"
+    },
+    "predicted_winner_name": {
+      "type": "string"
+    },
+    "predicted_method": {
+      "type": "string",
+      "enum": [
+        "KO/TKO",
+        "Submission",
+        "Decision",
+        "Draw"
+      ]
+    },
+    "predicted_round": {
+      "type": "number"
+    },
+    "is_correct_winner": {
+      "type": "boolean"
+    },
+    "is_correct_method": {
+      "type": "boolean"
+    },
+    "is_correct_round": {
+      "type": "boolean"
+    },
+    "points_earned": {
+      "type": "number",
+      "default": 0
+    },
+    "is_resolved": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "user_id",
+    "fight_id",
+    "predicted_winner_name"
+  ]
+}

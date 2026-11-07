@@ -1,0 +1,73 @@
+{
+  "name": "League",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "public_division",
+        "private_league",
+        "public_cup",
+        "private_cup"
+      ]
+    },
+    "division_tier": {
+      "type": "string",
+      "enum": [
+        "Bronze",
+        "Silver",
+        "Gold",
+        "Elite"
+      ],
+      "description": "For public divisions"
+    },
+    "invite_code": {
+      "type": "string",
+      "description": "For private leagues/cups"
+    },
+    "creator_id": {
+      "type": "string"
+    },
+    "member_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "max_members": {
+      "type": "number",
+      "default": 20
+    },
+    "season": {
+      "type": "string",
+      "description": "e.g. 2026-S1"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "completed",
+        "upcoming"
+      ],
+      "default": "active"
+    },
+    "description": {
+      "type": "string"
+    },
+    "cup_rounds": {
+      "type": "number",
+      "description": "For cups: total rounds"
+    },
+    "current_round": {
+      "type": "number",
+      "default": 1
+    }
+  },
+  "required": [
+    "name",
+    "type"
+  ]
+}

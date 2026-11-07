@@ -1,0 +1,45 @@
+{
+  "name": "NewsArticle",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string"
+    },
+    "summary": {
+      "type": "string"
+    },
+    "url": {
+      "type": "string"
+    },
+    "image_url": {
+      "type": "string"
+    },
+    "source_name": {
+      "type": "string"
+    },
+    "published_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "discipline": {
+      "type": "string"
+    },
+    "organization": {
+      "type": "string"
+    },
+    "fighter_names": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "data_source": {
+      "type": "string",
+      "description": "newsapi, bing, manual"
+    }
+  },
+  "required": [
+    "title",
+    "url"
+  ]
+}

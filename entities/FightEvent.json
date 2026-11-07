@@ -1,0 +1,45 @@
+{
+  "name": "FightEvent",
+  "type": "object",
+  "properties": {
+    "fight_id": {
+      "type": "string",
+      "description": "Reference to Fight"
+    },
+    "round": {
+      "type": "number",
+      "description": "Round number when this happened"
+    },
+    "time": {
+      "type": "string",
+      "description": "Time in round e.g. 2:34"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "strike",
+        "takedown",
+        "submission_attempt",
+        "knockdown",
+        "cut",
+        "point_deduction",
+        "round_end",
+        "fight_end",
+        "other"
+      ],
+      "default": "other"
+    },
+    "description": {
+      "type": "string",
+      "description": "Commentary text for this event"
+    },
+    "fighter_name": {
+      "type": "string",
+      "description": "Fighter who performed the action"
+    }
+  },
+  "required": [
+    "fight_id",
+    "description"
+  ]
+}

@@ -1,0 +1,69 @@
+{
+  "name": "DataSource",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "e.g. TheSportsDB, Wikidata, NewsAPI"
+    },
+    "source_type": {
+      "type": "string",
+      "enum": [
+        "api",
+        "scraper_placeholder",
+        "manual",
+        "rss"
+      ],
+      "default": "api"
+    },
+    "base_url": {
+      "type": "string"
+    },
+    "api_key_secret_name": {
+      "type": "string",
+      "description": "Name of the secret in Base44 secrets"
+    },
+    "disciplines": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "organizations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "data_types": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "fighters",
+          "events",
+          "fights",
+          "news",
+          "videos",
+          "rankings",
+          "images"
+        ]
+      }
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    },
+    "last_synced": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "name",
+    "source_type"
+  ]
+}

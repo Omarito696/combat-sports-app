@@ -1,0 +1,126 @@
+{
+  "name": "Fight",
+  "type": "object",
+  "properties": {
+    "event_id": {
+      "type": "string"
+    },
+    "fighter_a_id": {
+      "type": "string"
+    },
+    "fighter_b_id": {
+      "type": "string"
+    },
+    "fighter_a_name": {
+      "type": "string"
+    },
+    "fighter_b_name": {
+      "type": "string"
+    },
+    "discipline": {
+      "type": "string",
+      "enum": [
+        "MMA",
+        "Boxing",
+        "BJJ",
+        "Muay Thai",
+        "Kickboxing",
+        "Wrestling",
+        "Judo",
+        "Karate",
+        "Taekwondo",
+        "Kung Fu / Wushu"
+      ]
+    },
+    "weight_class": {
+      "type": "string"
+    },
+    "is_main_event": {
+      "type": "boolean",
+      "default": false
+    },
+    "is_title_fight": {
+      "type": "boolean",
+      "default": false
+    },
+    "rounds": {
+      "type": "number",
+      "default": 3
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "scheduled",
+        "live",
+        "completed",
+        "cancelled"
+      ],
+      "default": "scheduled"
+    },
+    "winner_id": {
+      "type": "string"
+    },
+    "winner_name": {
+      "type": "string"
+    },
+    "method": {
+      "type": "string"
+    },
+    "finish_round": {
+      "type": "number"
+    },
+    "finish_time": {
+      "type": "string"
+    },
+    "fighter_a_score": {
+      "type": "string"
+    },
+    "fighter_b_score": {
+      "type": "string"
+    },
+    "result_source_url": {
+      "type": "string"
+    },
+    "result_source_type": {
+      "type": "string",
+      "enum": [
+        "official_org",
+        "sports_db",
+        "wikipedia",
+        "manual",
+        "unknown"
+      ]
+    },
+    "result_confidence": {
+      "type": "string",
+      "enum": [
+        "high",
+        "medium",
+        "low"
+      ],
+      "default": "low"
+    },
+    "card_source_url": {
+      "type": "string"
+    },
+    "card_source_type": {
+      "type": "string",
+      "enum": [
+        "official_org",
+        "sports_db",
+        "news",
+        "manual",
+        "unknown"
+      ]
+    },
+    "order": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "event_id",
+    "fighter_a_name",
+    "fighter_b_name",
+    "discipline"
+  ]
+}

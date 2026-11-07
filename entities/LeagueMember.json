@@ -1,0 +1,50 @@
+{
+  "name": "LeagueMember",
+  "type": "object",
+  "properties": {
+    "league_id": {
+      "type": "string"
+    },
+    "user_id": {
+      "type": "string"
+    },
+    "user_name": {
+      "type": "string"
+    },
+    "total_points": {
+      "type": "number",
+      "default": 0
+    },
+    "rank": {
+      "type": "number"
+    },
+    "division_tier": {
+      "type": "string",
+      "enum": [
+        "Bronze",
+        "Silver",
+        "Gold",
+        "Elite"
+      ],
+      "default": "Bronze"
+    },
+    "weekly_points": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "week": {
+            "type": "number"
+          },
+          "points": {
+            "type": "number"
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "league_id",
+    "user_id"
+  ]
+}

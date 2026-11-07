@@ -1,0 +1,73 @@
+{
+  "name": "FantasyLineup",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string"
+    },
+    "week_id": {
+      "type": "string",
+      "description": "Reference to FantasyWeek"
+    },
+    "week_number": {
+      "type": "number"
+    },
+    "year": {
+      "type": "number"
+    },
+    "striker_fighter_id": {
+      "type": "string"
+    },
+    "striker_fighter_name": {
+      "type": "string"
+    },
+    "striker_fight_id": {
+      "type": "string"
+    },
+    "wrestler_fighter_id": {
+      "type": "string"
+    },
+    "wrestler_fighter_name": {
+      "type": "string"
+    },
+    "wrestler_fight_id": {
+      "type": "string"
+    },
+    "grappler_fighter_id": {
+      "type": "string"
+    },
+    "grappler_fighter_name": {
+      "type": "string"
+    },
+    "grappler_fight_id": {
+      "type": "string"
+    },
+    "tokens_spent": {
+      "type": "number"
+    },
+    "total_points": {
+      "type": "number",
+      "default": 0
+    },
+    "striker_points": {
+      "type": "number",
+      "default": 0
+    },
+    "wrestler_points": {
+      "type": "number",
+      "default": 0
+    },
+    "grappler_points": {
+      "type": "number",
+      "default": 0
+    },
+    "is_scored": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "user_id",
+    "week_id"
+  ]
+}
