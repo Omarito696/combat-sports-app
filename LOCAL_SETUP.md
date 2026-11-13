@@ -20,7 +20,7 @@ CPU mode is the tested default. `FIGHTTRACKER_GPU=1 npm run dev:full` enables Me
 
 Create your FightTracker account at http://127.0.0.1:5180/register using your own email and password. Supabase manages passwords and sessions; the app does not store plaintext passwords. Email confirmation is enabled. Google OAuth is disabled on the project, so its inactive buttons are hidden. It can be enabled separately later with provider credentials and `VITE_GOOGLE_AUTH_ENABLED=true`.
 
-Supabase Auth → URL Configuration must include `http://127.0.0.1:5180` and `http://127.0.0.1:5180/reset-password` for confirmation and password-recovery links. The user's email confirmation and signed-in browser check require the user to complete their account setup.
+Supabase Auth → URL Configuration is set to `http://127.0.0.1:5180`, with that address and `http://127.0.0.1:5180/reset-password` saved in the allowed redirects after the user's approval. Real account creation and email confirmation were completed by the user. A real answer was then verified through the signed-in Ask AI screen. Profile preferences can be completed during onboarding.
 
 ## AI and access controls
 
