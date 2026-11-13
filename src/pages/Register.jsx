@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Swords, Mail, Lock, Loader2 } from 'lucide-react';
 
 export default function Register() {
+  const googleEnabled = import.meta.env.VITE_GOOGLE_AUTH_ENABLED === 'true';
   const [step, setStep] = useState('register'); // 'register' | 'otp'
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -99,11 +100,11 @@ export default function Register() {
                 Sign Up
               </Button>
             </form>
-            <div className="relative">
+            {googleEnabled && <><div className="relative">
               <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border" /></div>
               <div className="relative flex justify-center text-xs"><span className="bg-background px-2 text-muted-foreground">or</span></div>
             </div>
-            <Button variant="outline" className="w-full" onClick={handleGoogle}>Continue with Google</Button>
+            <Button variant="outline" className="w-full" onClick={handleGoogle}>Continue with Google</Button></>}
             <p className="text-center text-sm text-muted-foreground">
               Already have an account? <Link to="/login" className="text-primary hover:underline">Sign in</Link>
             </p>

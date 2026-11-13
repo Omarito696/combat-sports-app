@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { Home, Users, Swords, Menu, X, Trophy, Newspaper, User } from 'lucide-react';
+import { Home, Users, Swords, Menu, X, Trophy, Newspaper, User, MessageCircle } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { base44 } from '@/api/base44Client';
@@ -10,6 +10,7 @@ const NAV_ITEMS = [
   { path: '/fighters', label: 'Fighters', icon: Users },
   { path: '/fantasy', label: 'Fantasy', icon: Trophy },
   { path: '/news', label: 'News', icon: Newspaper },
+  { path: '/assistant', label: 'Ask AI', icon: MessageCircle },
   { path: '/profile', label: 'Profile', icon: User },
 ];
 
@@ -100,7 +101,7 @@ export default function AppLayout() {
 
       {/* Bottom Nav Mobile */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 border-t border-border/50 bg-background/95 backdrop-blur-xl z-50">
-        <div className="flex items-center justify-around py-2">
+        <div className="flex items-center justify-around py-2 overflow-x-auto">
           {NAV_ITEMS.map(({ path, label, icon: Icon }) => (
             <Link
               key={path}

@@ -31,6 +31,7 @@ import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
+import Assistant from '@/pages/Assistant';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -75,6 +76,7 @@ const AuthenticatedApp = () => {
           <Route path="/fantasy/divisions" element={<Divisions />} />
           <Route path="/news" element={<News />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/assistant" element={<Assistant />} />
           <Route path="/fights/:id" element={<FightDetail />} />
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/fighters/:name" element={<FighterProfile />} />

@@ -22,7 +22,7 @@ The real client rejects simulation provenance, and database constraints only acc
 
 Email/password, email confirmation, Google OAuth, and password recovery use Supabase Auth. Configure Google provider credentials separately if Google login is needed. In Supabase Auth URL Configuration, allow each local URL used (for example `http://localhost:5173`, `http://127.0.0.1:5173`, and their `/reset-password` paths) plus deployed URLs. Confirmation emails may contain links rather than codes, depending on the project template. Complete real email confirmation/OAuth flows with your own account; no test accounts are created by this setup.
 
-The former Base44 LLM integration is deliberately unavailable. AI/news generation requires a separately implemented trusted service; the app never substitutes generated content for live sports facts. No automatic real sports ingestion or scoring service is installed.
+The former Base44 LLM integration remains unavailable for sports-data generation. The separate **Ask AI** screen now uses an authenticated local llama.cpp service with Qwen3-4B. It explains rules and terminology; it has no browsing tools and never writes generated answers to sports tables. See [LOCAL_SETUP.md](LOCAL_SETUP.md) for startup, testing and licence details. No automatic real sports ingestion or scoring service is installed.
 
 League records currently use owner-only visibility. Cross-account invite joins and public leaderboards need dedicated server APIs before enabling them for real users; the simulation store can exercise local league creation.
 
@@ -37,3 +37,9 @@ League records currently use owner-only visibility. Cross-account invite joins a
 Browser verification completed real-mode sign-in rendering and simulation onboarding/profile persistence after reload. Database role tests verified owner isolation, denied cross-user/catalog writes, protected scores, and rolled back their temporary data. Security advisors reported no findings. Dependency audit reported five inherited findings (four moderate, one high); resolving them requires dependency review/upgrades. Vite also reports a bundle size warning.
 
 GitHub Actions runs installation, isolation tests, and a simulation build on push and pull requests. Production builds must use real-mode configuration, never the simulation build.
+
+## Save and read one backend test row
+
+Run `npm run test:backend` from the project directory. The command loads the URL and publishable key from `.env.local`, saves one diagnostic row, then makes a separate request to read it and verify its unique run ID. Success prints `PASS: saved and read back the same test row.`
+
+The row is visible in Supabase Table Editor → `backend_check`. Rerunning replaces the same row instead of accumulating test records. This intentionally public diagnostic table accepts only ID `1` and the fixed message `Backend connection test`; its timestamps/run IDs are public and must never contain private information. It is separate from all real sports and user records. Its setup SQL is in `supabase/backend-check.sql` and is already applied to the connected project.

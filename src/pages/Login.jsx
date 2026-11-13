@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Swords, Mail, Lock, Loader2 } from 'lucide-react';
 
 export default function Login() {
+  const googleEnabled = import.meta.env.VITE_GOOGLE_AUTH_ENABLED === 'true';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -66,14 +67,14 @@ export default function Login() {
           </Button>
         </form>
 
-        <div className="relative">
+        {googleEnabled && <><div className="relative">
           <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border" /></div>
           <div className="relative flex justify-center text-xs"><span className="bg-background px-2 text-muted-foreground">or</span></div>
         </div>
 
         <Button variant="outline" className="w-full" onClick={handleGoogle}>
           Continue with Google
-        </Button>
+        </Button></>}
 
         <div className="text-center space-y-2 text-sm">
           <Link to="/forgot-password" className="text-muted-foreground hover:text-foreground transition-colors">Forgot password?</Link>
