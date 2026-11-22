@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { ChevronRight, Check, Swords } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import FighterAvatar from '@/components/shared/FighterAvatar';
 
@@ -90,14 +90,7 @@ export default function Onboarding() {
           <p className="text-xs text-muted-foreground mt-2 text-right">Step {step + 1} of {STEPS.length}</p>
         </div>
 
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentStep}
-            initial={{ opacity: 0, x: 30 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -30 }}
-            transition={{ duration: 0.25 }}
-          >
+          <div key={currentStep}>
             {/* WELCOME */}
             {currentStep === 'welcome' && (
               <div className="rounded-2xl border border-border/60 bg-card/50 p-8 text-center space-y-4">
@@ -250,8 +243,7 @@ export default function Onboarding() {
                 </button>
               </div>
             )}
-          </motion.div>
-        </AnimatePresence>
+          </div>
       </div>
     </div>
   );

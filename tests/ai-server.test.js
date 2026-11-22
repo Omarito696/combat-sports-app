@@ -81,3 +81,39 @@ test('local completion caps output and never forwards client-supplied tools or b
   assert.match(body.messages[0].content, /no web access/);
   assert.equal(body.tools, undefined);
 });
+
+test('a delayed request cannot reset a quota consumed while its body arrives', async t => {
+  let notify;
+  const authenticated = new Promise(resolve => { notify = resolve; });
+  const ask = await fixture(t, { verifyUser: async () => { notify(); return { id: 'same-user' }; } });
+  let slow;
+  const delayed = new Promise((resolve, reject) => {
+    slow = request(ask.url, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer valid-a' } }, res => { res.resume(); resolve(res.statusCode); });
+    slow.on('error', reject);
+    slow.write('{"question":"delayed');
+  });
+  await authenticated;
+  for (let i = 0; i < 10; i++) assert.equal((await ask()).status, 200);
+  slow.end('"}');
+  assert.equal(await delayed, 429);
+});
+
+test('Unicode questions survive a network chunk boundary inside a character', async t => {
+  let received, notify;
+  const authenticated = new Promise(resolve => { notify = resolve; });
+  const ask = await fixture(t, {
+    verifyUser: async () => { notify(); return { id: 'user' }; },
+    complete: async question => { received = question; return 'Answer'; },
+  });
+  const question = 'Explain 🥊 scoring';
+  const bytes = Buffer.from(JSON.stringify({ question }));
+  const split = bytes.indexOf(Buffer.from('🥊')) + 1;
+  const response = new Promise((resolve, reject) => {
+    const req = request(ask.url, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer valid-a' } }, res => { res.resume(); resolve(res.statusCode); });
+    req.on('error', reject);
+    req.write(bytes.subarray(0, split));
+    authenticated.then(() => setTimeout(() => req.end(bytes.subarray(split)), 20));
+  });
+  assert.equal(await response, 200);
+  assert.equal(received, question);
+});

@@ -56,4 +56,4 @@ The final production artifact must be built with `npm run build`, because both b
 - Supabase's [privacy policy](https://supabase.com/privacy) excludes under-13s. Its [terms](https://supabase.com/terms) require authority to enter the agreement; this is not a guarantee of independent contractual eligibility for every minor in every country. No new Supabase provider account was created.
 - [GitHub terms](https://docs.github.com/en/site-policy/github-terms/github-terms-of-service) require at least 13, with higher local minimums where applicable. This setup uses the existing repository/account.
 
-The Google Form is intentionally untouched.
+Forge AI assignment work is recorded in `PLAN.md` and `REVIEW.md`. The forms explain the local Qwen substitution; Gemini integration must not be claimed.

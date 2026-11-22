@@ -1,4 +1,5 @@
 import { supabase, isSimulation } from './supabaseClient';
+import { readAiResponse } from './aiResponse';
 
 export async function askLocalAi(question) {
   if (isSimulation) throw new Error('Sign in to the real app to use the local assistant.');
@@ -10,7 +11,5 @@ export async function askLocalAi(question) {
     body: JSON.stringify({ question }),
     signal: AbortSignal.timeout(65_000),
   });
-  const result = await response.json().catch(() => ({ error: 'Start the local assistant with npm run dev:full.' }));
-  if (!response.ok) throw new Error(result.error || 'The assistant is unavailable.');
-  return result;
+  return readAiResponse(response);
 }

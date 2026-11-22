@@ -27,21 +27,28 @@ export function createAiServer({ verifyUser, complete, now = Date.now }) {
     if (!user?.id) return send(res, 401, { error: 'Your session has expired. Please sign in again.' });
     const time = now();
     for (const [id, value] of windows) if (value.reset <= time) windows.delete(id);
-    const window = windows.get(user.id) || { count: 0, reset: time + 60_000 };
-    if (window.count >= 10) return send(res, 429, { error: 'Limit reached: 10 questions per minute. Try again shortly.' }, { 'Retry-After': String(Math.ceil((window.reset - time) / 1000)) });
+    const currentWindow = windows.get(user.id);
+    if (currentWindow?.count >= 10) return send(res, 429, { error: 'Limit reached: 10 questions per minute. Try again shortly.' }, { 'Retry-After': String(Math.ceil((currentWindow.reset - time) / 1000)) });
     if (activeUsers.has(user.id) || active >= 2) return send(res, 429, { error: 'The assistant is busy. Please wait for the current answer.' }, { 'Retry-After': '5' });
-    let body = '';
+    const chunks = [];
+    let bytes = 0;
     try {
       for await (const chunk of req) {
-        if (Buffer.byteLength(body) + chunk.length > 16_384) return send(res, 413, { error: 'Question is too large.' });
-        body += chunk;
+        bytes += chunk.length;
+        if (bytes > 16_384) return send(res, 413, { error: 'Question is too large.' });
+        chunks.push(chunk);
       }
-      const data = JSON.parse(body);
+      const data = JSON.parse(Buffer.concat(chunks).toString('utf8'));
       if (typeof data.question !== 'string' || !data.question.trim() || data.question.trim().length > 2000) {
         return send(res, 400, { error: 'Enter a question of 1–2,000 characters.' });
       }
       // Recheck after reading the body, since another request may have started.
       if (activeUsers.has(user.id) || active >= 2) return send(res, 429, { error: 'The assistant is busy. Try again shortly.' }, { 'Retry-After': '5' });
+      // Read and reserve the latest quota atomically after the body has arrived.
+      const reservedAt = now();
+      const latest = windows.get(user.id);
+      const window = latest && latest.reset > reservedAt ? latest : { count: 0, reset: reservedAt + 60_000 };
+      if (window.count >= 10) return send(res, 429, { error: 'Limit reached: 10 questions per minute. Try again shortly.' }, { 'Retry-After': String(Math.ceil((window.reset - reservedAt) / 1000)) });
       window.count += 1;
       windows.set(user.id, window);
       activeUsers.add(user.id);
