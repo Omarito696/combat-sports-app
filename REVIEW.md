@@ -19,4 +19,4 @@ Scope: the local Ask AI feature, its authenticated gateway, request limits and r
 
 ## Assignment adaptation
 
-This feature uses Qwen3 through llama.cpp instead of Gemini because the selected local setup avoids the age-restricted Gemini developer service and AI usage fees. The form must explain the substitution and must not claim Gemini integration. Sentry is optional in the slides and has not been connected. A working-feature screenshot and Google Forms submission are separate completion steps.
+This feature uses Qwen3 through llama.cpp instead of Gemini because the selected local setup avoids the age-restricted Gemini developer service and AI usage fees. Both Forge AI Google Forms were submitted on 22 November 2026, and each displayed “Your response has been recorded.” Assignment #2 included the working-feature screenshot and the feature branch URL. The response explained the local substitution; Gemini and optional Sentry were left unchecked. Sentry has not been connected. The screenshot of the completed fields was captured while the submission was processing, before the receipt appeared.
