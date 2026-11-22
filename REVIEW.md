@@ -15,6 +15,7 @@ Scope: the local Ask AI feature, its authenticated gateway, request limits and r
 - Browser verification exposed a separate onboarding transition bug: the old step remained interactive while its exit animation waited, allowing the step counter to advance beyond five. Step content now changes immediately without waiting for an exit animation. The profile was completed in the browser with optional preferences left empty.
 - The Supabase security advisor reports no RLS findings. It reports one existing warning: leaked-password protection is disabled. See [Supabase password security](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection). No plan upgrade or authentication policy change was made.
 - The model remains local behind a loopback gateway; Supabase validates the session before inference. Local model files, runtime credentials and environment files remain excluded from Git.
+- The signed-in browser flow returned real Qwen3 answers. The captured example is in `evidence/forge-ai-feature.jpg`. Another answer incorrectly called a judges' decision a knockout rule; model accuracy remains a limitation, consistent with the visible warning. Generated explanations must not be treated as verified sports records.
 
 ## Assignment adaptation
 
