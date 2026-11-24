@@ -89,7 +89,7 @@ export function verifyUpcomingFight(fight, event, fighters, allFights = []) {
   if (!event.date) issues.push('Event has no date');
   const eventDate = event.date ? new Date(event.date) : null;
   if (eventDate && isNaN(eventDate.getTime())) issues.push('Invalid event date');
-  if (eventDate && eventDate < today) issues.push(`Event date (${event.date.slice(0, 10)}) is in the past`);
+  if (eventDate && eventDate < today && event.status !== 'live') issues.push(`Event date (${event.date.slice(0, 10)}) is in the past`);
   if (event.status === 'completed') issues.push('Event marked completed but fight is scheduled');
   if (event.status === 'cancelled') issues.push('Event is cancelled');
 

@@ -48,7 +48,10 @@ create table public.event (
   "date_source_type" text,
   "card_source_url" text,
   "card_source_type" text,
-  "event_confidence" text default 'low'
+  "event_confidence" text default 'low',
+  "main_card_at" timestamptz,
+  "prelims_at" timestamptz,
+  "early_prelims_at" timestamptz
 );
 
 alter table public.event enable row level security;
@@ -164,7 +167,8 @@ create table public.fight (
   "result_confidence" text default 'low',
   "card_source_url" text,
   "card_source_type" text,
-  "order" numeric
+  "order" numeric,
+  "card_section" text
 );
 
 alter table public.fight enable row level security;
@@ -243,6 +247,7 @@ create table public.fighter (
   "date_of_birth" text,
   "height_cm" numeric,
   "reach_cm" numeric,
+  "profile_weight_lbs" numeric,
   "stance" text,
   "organization" text,
   "status" text default 'Active',

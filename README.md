@@ -26,6 +26,14 @@ The former Base44 LLM integration is deliberately unavailable. AI/news generatio
 
 League records currently use owner-only visibility. Cross-account invite joins and public leaderboards need dedicated server APIs before enabling them for real users; the simulation store can exercise local league creation.
 
+## UFC catalog sync
+
+`node scripts/sync-ufc.js` checks one upcoming and one completed UFC card using the server-side `UFCALENDAR_API_KEY` in `.env.local`. Pass one or two UFCalendar event slugs to check specific cards. A default run uses six requests and does not write to the database.
+
+Add `--publish` only when you intend to expose the selected data through the public catalog. Set `FIGHT_CATALOG_ADMIN_TOKEN` to a current access token for an existing app catalog admin. The run writes event, bout, and fighter records and adds confirmed result entries to the fight ticker. A refresh of the same card updates the same records. The importer enriches one fighter per card and does not generate in-round commentary.
+
+Use `--refresh` to check one current or next card and the latest completed card in the past seven days. It uses at most three UFCalendar requests per run and skips profile lookups. The GitHub Actions UFC catalog workflow runs this mode daily after the workflow is on the default branch and the repository has the `VITE_SUPABASE_URL` variable plus `UFCALENDAR_API_KEY` and `FIGHT_CATALOG_SERVER_KEY` secrets. Use a Supabase server key for the latter. Keep both keys out of frontend configuration. Reserve free-tier requests for manual backfills and avoid repeated workflow dispatches.
+
 ## Checks
 
 - `npm test`: simulation persistence and prevention of simulated writes through the real adapter.

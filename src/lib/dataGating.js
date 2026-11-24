@@ -47,7 +47,7 @@ export function categorizeFights(fights, events, fighters) {
     const event = eventMap[fight.event_id];
     let verification;
 
-    if (fight.status === 'scheduled') {
+    if (fight.status === 'scheduled' || (fight.status === 'live' && event?.status === 'live')) {
       verification = verifyUpcomingFight(fight, event, fighters, fights);
     } else if (fight.status === 'completed') {
       verification = verifyHistoricalFight(fight, event, fighters);

@@ -194,7 +194,14 @@ export default function FighterProfile() {
             {profile.weight_class && <span className="text-xs text-muted-foreground">{profile.weight_class}</span>}
             {profile.nationality && <span className="text-xs text-muted-foreground">· {profile.nationality}</span>}
           </div>
-          {(profile.wins != null || profile.losses != null) && (
+          {[profile.height_cm, profile.reach_cm, profile.profile_weight_lbs].some(value => value != null) && (
+            <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+              {profile.height_cm != null && <span>Height {profile.height_cm} cm</span>}
+              {profile.reach_cm != null && <span>Reach {profile.reach_cm} cm</span>}
+              {profile.profile_weight_lbs != null && <span>Listed weight {profile.profile_weight_lbs} lb</span>}
+            </div>
+          )}
+          {(profile.wins || profile.losses || profile.draws || profile.record_source_url) ? (
             <div className="flex items-center gap-4 mt-3">
               <div className="text-center">
                 <p className="text-xl font-bold text-green-400">{profile.wins ?? '—'}</p>
@@ -215,7 +222,7 @@ export default function FighterProfile() {
                 </div>
               )}
             </div>
-          )}
+          ) : <p className="mt-3 text-xs text-muted-foreground">Career record unavailable</p>}
           {/* Data source badges */}
           <div className="flex items-center gap-1.5 mt-3 flex-wrap">
             <span className="text-[10px] text-muted-foreground">Sources:</span>

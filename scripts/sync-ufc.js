@@ -1,0 +1,178 @@
+import { createHash } from 'node:crypto';
+import { createClient } from '@supabase/supabase-js';
+import { loadEnv } from 'vite';
+
+const env = { ...loadEnv('development', process.cwd(), ''), ...process.env };
+const publish = process.argv.includes('--publish');
+const refresh = process.argv.includes('--refresh');
+const source = 'sports_db';
+const origin = 'https://www.ufcalendar.com';
+let providerCalls = 0;
+
+function idFor(type, id) {
+  if (id == null) throw new Error('Provider record is missing its ID.');
+  const hash = createHash('sha256').update(`ufcalendar:${type}:${id}`).digest('hex');
+  return `${hash.slice(0, 8)}-${hash.slice(8, 12)}-8${hash.slice(13, 16)}-a${hash.slice(17, 20)}-${hash.slice(20, 32)}`;
+}
+
+async function get(path) {
+  providerCalls += 1;
+  const response = await fetch(`https://api.ufcalendar.com/v1/${path}`, {
+    headers: { Authorization: `Bearer ${env.UFCALENDAR_API_KEY}` },
+    signal: AbortSignal.timeout(15_000),
+  });
+  if (!response.ok) {
+    const retry = response.headers.get('retry-after');
+    throw new Error(`UFCalendar HTTP ${response.status}${retry ? ` (retry after ${retry})` : ''}.`);
+  }
+  const payload = await response.json();
+  if (payload.data == null) throw new Error('UFCalendar returned no data.');
+  return payload.data;
+}
+
+function fighterRow(fighter, division, profile) {
+  const record = profile?.records?.pro_mma;
+  const cm = inches => typeof inches === 'number' && inches > 0 ? Math.round(inches * 254) / 100 : null;
+  return {
+    id: idFor('fighter', fighter.id), name: fighter.name, discipline: 'MMA', organization: 'UFC',
+    nickname: fighter.nickname, nationality: fighter.nationality, country_code: fighter.country_code,
+    ...(division ? { weight_class: division } : {}),
+    ...(profile ? {
+      height_cm: cm(profile.height_inches), reach_cm: cm(profile.reach_inches),
+      profile_weight_lbs: profile.weight_lbs > 0 ? profile.weight_lbs : null,
+      date_of_birth: profile.dob, stance: profile.stance,
+    } : {}),
+    ...(Number.isFinite(record?.wins) ? {
+      wins: record.wins, losses: record.losses, draws: record.draws,
+      no_contests: record.no_contests, record_source_type: source,
+      record_source_url: `${origin}/fighters/${fighter.slug}`,
+      record_confidence: 'medium', record_last_verified_at: new Date().toISOString(),
+    } : {}),
+  };
+}
+
+function fightRow(bout, eventId, url) {
+  const { fighter_a: a, fighter_b: b, result } = bout;
+  const winner = [a, b].find(fighter => fighter.id === result?.winner_fighter_id);
+  const status = ({ announced: 'scheduled', upcoming: 'scheduled', scheduled: 'scheduled', live: 'live', completed: 'completed',
+    no_contest: 'completed', cancelled: 'cancelled', canceled: 'cancelled' })[bout.status];
+  if (!status) throw new Error(`Unsupported UFCalendar bout status: ${bout.status}.`);
+  return {
+    id: idFor('fight', bout.id), event_id: eventId, discipline: 'MMA',
+    fighter_a_id: idFor('fighter', a.id), fighter_b_id: idFor('fighter', b.id),
+    fighter_a_name: a.name, fighter_b_name: b.name, weight_class: bout.weight_class,
+    is_main_event: bout.is_main, is_title_fight: bout.is_title, order: bout.ordering,
+    card_section: bout.card_section ?? null,
+    rounds: bout.scheduled_rounds, status,
+    winner_id: winner ? idFor('fighter', winner.id) : null, winner_name: winner?.name ?? null,
+    method: result?.method ?? null, finish_round: result?.round ?? null, finish_time: result?.time ?? null,
+    result_source_url: result ? url : null, result_source_type: result ? source : null,
+    result_confidence: result ? 'medium' : 'low', card_source_url: url, card_source_type: source,
+  };
+}
+
+async function writer() {
+  if (!publish) return null;
+  if (env.FIGHT_CATALOG_SERVER_KEY) {
+    return createClient(env.VITE_SUPABASE_URL, env.FIGHT_CATALOG_SERVER_KEY, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+  }
+  const token = env.FIGHT_CATALOG_ADMIN_TOKEN;
+  if (!token) throw new Error('Publishing requires a catalog server key or an existing catalog admin session.');
+  const client = createClient(env.VITE_SUPABASE_URL, env.VITE_SUPABASE_PUBLISHABLE_KEY, {
+    auth: { persistSession: false, autoRefreshToken: false },
+    global: { headers: { Authorization: `Bearer ${token}` } },
+  });
+  const { data, error } = await client.auth.getUser(token);
+  if (error || data.user?.app_metadata?.role !== 'admin') throw new Error('A valid catalog admin session is required to publish.');
+  return client;
+}
+
+async function checked(query) {
+  const { data, error } = await query;
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+async function upsert(client, table, rows) {
+  if (rows.length) await checked(client.from(table).upsert(rows, { defaultToNull: false }));
+}
+
+async function sync() {
+  if (!env.UFCALENDAR_API_KEY) throw new Error('UFCALENDAR_API_KEY is missing.');
+  const client = await writer();
+  const ids = process.argv.slice(2).filter(arg => !['--publish', '--refresh'].includes(arg));
+  if (ids.length > 2 || ids.some(id => !/^[a-z0-9-]+$/.test(id))) {
+    throw new Error('Pass up to two UFCalendar event slugs, or omit slugs for one upcoming and one completed card.');
+  }
+  if (!ids.length && refresh) {
+    const from = new Date(Date.now() - 7 * 86_400_000).toISOString().slice(0, 10);
+    const events = await get(`events?org=ufc&from=${from}&limit=25`);
+    const active = events.find(event => event.status === 'live')
+      ?? events.find(event => ['announced', 'scheduled'].includes(event.status));
+    const completed = events.findLast(event => event.status === 'completed');
+    ids.push(...[active?.slug, completed?.slug].filter(Boolean));
+  } else if (!ids.length) {
+    for (const status of ['upcoming', 'completed']) {
+      const events = await get(`events?org=ufc&status=${status}&limit=1`);
+      if (events[0]?.slug) ids.push(events[0].slug);
+    }
+  }
+  for (const slug of new Set(ids)) {
+    const event = await get(`events/${slug}`);
+    if ((typeof event.org === 'object' ? event.org?.slug : event.org) !== 'ufc' || !Array.isArray(event.card)) {
+      throw new Error('Expected a UFC event with a full card.');
+    }
+    const status = ({ announced: 'upcoming', scheduled: 'upcoming', upcoming: 'upcoming',
+      live: 'live', completed: 'completed' })[event.status];
+    if (!status) throw new Error(`Unsupported event status: ${event.status}.`);
+    const eventId = idFor('event', event.id);
+    const url = `${origin}/events/${event.slug}`;
+    const fighters = new Map();
+    const bouts = event.card.filter(bout => bout.fighter_a && bout.fighter_b);
+    for (const bout of bouts) {
+      for (const fighter of [bout.fighter_a, bout.fighter_b]) {
+        fighters.set(fighter.id, fighterRow(fighter, bout.weight_class));
+      }
+    }
+    // Enrich one listed athlete per card to keep the free-tier refresh bounded.
+    const lead = bouts[0]?.fighter_a;
+    const profile = lead && !refresh ? await get(`fighters/${encodeURIComponent(lead.slug)}`) : null;
+    if (profile) fighters.set(lead.id, fighterRow(lead, bouts[0].weight_class, profile));
+    const fights = bouts.map(bout => fightRow(bout, eventId, url));
+    const ticker = fights.filter(fight => fight.status === 'completed' && fight.method).map(fight => ({
+      id: idFor('result', fight.id), fight_id: fight.id, type: 'fight_end',
+      round: fight.finish_round, time: fight.finish_time, fighter_name: fight.winner_name,
+      description: fight.winner_name ? `${fight.winner_name} wins by ${fight.method}.` : `Result: ${fight.method}.`,
+    }));
+    if (client) {
+      if (!fights.length) throw new Error('Refusing to publish an empty card.');
+      await upsert(client, 'fighter', [...fighters.values()].filter(row => !profile || row.id !== idFor('fighter', lead.id)));
+      if (profile) await upsert(client, 'fighter', [fighters.get(lead.id)]);
+      await upsert(client, 'event', [{
+        id: eventId, name: event.title, discipline: 'MMA', organization: 'UFC',
+        date: event.starts_at, status, venue: event.venue?.name ?? null,
+        main_card_at: event.main_card_at ?? null, prelims_at: event.prelims_at ?? null,
+        early_prelims_at: event.early_prelims_at ?? null,
+        location: [event.venue?.city, event.venue?.country].filter(Boolean).join(', '),
+        date_source_url: url, date_source_type: source, card_source_url: url, card_source_type: source,
+        event_confidence: 'medium',
+      }]);
+      await upsert(client, 'fight', fights);
+      await upsert(client, 'fight_event', ticker);
+      const existing = await checked(client.from('fight').select('id,status').eq('event_id', eventId)
+        .like('card_source_url', `${origin}/events/%`));
+      const received = new Set(fights.map(fight => fight.id));
+      const removed = existing.filter(fight => ['scheduled', 'live'].includes(fight.status) && !received.has(fight.id));
+      if (removed.length) await checked(client.from('fight').update({ status: 'cancelled' }).in('id', removed.map(fight => fight.id)));
+    }
+    console.log(`${publish ? 'Synced' : 'Verified'} ${slug}: ${fights.length} bouts, ${fighters.size} fighters, ${ticker.length} result entries.`);
+  }
+  console.log(`UFCalendar calls: ${providerCalls}.`);
+}
+
+sync().catch(error => {
+  console.error(error.message);
+  process.exitCode = 1;
+});

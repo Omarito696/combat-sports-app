@@ -109,14 +109,27 @@ export default function FightDetail() {
   const { id } = useParams();
   const [isAdmin, setIsAdmin] = useState(false);
 
-  const { data: fights = [] } = useQuery({
+  const { data: fight, isPending: fightLoading } = useQuery({
     queryKey: ['fight', id],
-    queryFn: () => base44.entities.Fight.list('order', 200),
+    queryFn: () => base44.entities.Fight.filter({ id }, 'order', 1).then(([row]) => row ?? null),
+    refetchInterval: query => ['scheduled', 'live'].includes(query.state.data?.status) ? 30000 : false,
   });
-  const fight = fights.find(f => f.id === id);
 
-  const { data: events = [] } = useQuery({ queryKey: ['events'], queryFn: () => base44.entities.Event.list('-date', 50) });
-  const { data: fighters = [] } = useQuery({ queryKey: ['fighters'], queryFn: () => base44.entities.Fighter.list('name', 200) });
+  const { data: event } = useQuery({
+    queryKey: ['event', fight?.event_id],
+    enabled: Boolean(fight?.event_id),
+    queryFn: () => base44.entities.Event.filter({ id: fight.event_id }, '-date', 1).then(([row]) => row ?? null),
+  });
+  const { data: fighters = [] } = useQuery({
+    queryKey: ['fight-fighters', fight?.fighter_a_id, fight?.fighter_b_id, fight?.fighter_a_name, fight?.fighter_b_name],
+    enabled: Boolean(fight),
+    queryFn: () => Promise.all(['a', 'b'].map(async corner => {
+      const id = fight[`fighter_${corner}_id`];
+      const name = fight[`fighter_${corner}_name`];
+      const [row] = await base44.entities.Fighter.filter(id ? { id } : { name }, 'name', 1);
+      return row;
+    })),
+  });
   const { data: fightEvents = [] } = useQuery({
     queryKey: ['fight-events', id],
     queryFn: () => base44.entities.FightEvent.filter({ fight_id: id }, 'created_date', 200),
@@ -127,6 +140,8 @@ export default function FightDetail() {
     base44.auth.me().then(u => setIsAdmin(u?.role === 'admin')).catch(() => {});
   }, []);
 
+  if (fightLoading) return <p className="text-muted-foreground">Loading fight…</p>;
+
   if (!fight) return (
     <div className="flex flex-col items-center justify-center py-24 gap-4">
       <Swords className="w-12 h-12 text-muted-foreground/30" />
@@ -135,11 +150,10 @@ export default function FightDetail() {
     </div>
   );
 
-  const event = events.find(e => e.id === fight.event_id);
-  const fighterA = fighters.find(f => f.name === fight.fighter_a_name);
-  const fighterB = fighters.find(f => f.name === fight.fighter_b_name);
+  const [fighterA, fighterB] = fighters;
   const isCompleted = fight.status === 'completed';
   const isLive = fight.status === 'live';
+  const isResultsFeed = fight.card_source_url?.startsWith('https://www.ufcalendar.com/events/');
   const aWon = fight.winner_name === fight.fighter_a_name;
   const bWon = fight.winner_name === fight.fighter_b_name;
 
@@ -265,7 +279,7 @@ export default function FightDetail() {
         <div className="flex items-center gap-2 mb-3">
           <Radio className={cn("w-4 h-4", isLive ? "text-red-400" : "text-muted-foreground")} />
           <h2 className="font-heading text-lg font-bold uppercase tracking-wide">
-            {isLive ? 'Live Commentary' : 'Fight Commentary'}
+            {isResultsFeed ? 'Fight Updates' : isLive ? 'Live Commentary' : 'Fight Commentary'}
           </h2>
           {isLive && <span className="text-[10px] font-bold bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full border border-red-500/30 animate-pulse">LIVE</span>}
         </div>
@@ -275,7 +289,9 @@ export default function FightDetail() {
         ) : (
           <div className="flex flex-col items-center justify-center py-10 gap-2 rounded-xl border border-border/40 bg-card/30">
             <Radio className="w-8 h-8 text-muted-foreground/20" />
-            <p className="text-sm text-muted-foreground">{isLive ? 'Waiting for first event...' : 'No commentary recorded for this fight.'}</p>
+            <p className="text-sm text-muted-foreground">{isResultsFeed
+              ? 'Confirmed results appear after the next catalog refresh.'
+              : isLive ? 'Waiting for first event...' : 'No commentary recorded for this fight.'}</p>
           </div>
         )}
 
