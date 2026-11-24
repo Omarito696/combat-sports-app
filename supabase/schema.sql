@@ -168,7 +168,8 @@ create table public.fight (
   "card_source_url" text,
   "card_source_type" text,
   "order" numeric,
-  "card_section" text
+  "card_section" text,
+  "statistics" jsonb
 );
 
 alter table public.fight enable row level security;
