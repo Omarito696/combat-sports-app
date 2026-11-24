@@ -34,6 +34,8 @@ Add `--publish` only when you intend to expose the selected data through the pub
 
 Use `--refresh` to check one current or next card and the latest completed card in the past seven days. It uses at most three UFCalendar requests per run and skips profile lookups. The GitHub Actions UFC catalog workflow runs this mode daily after the workflow is on the default branch and the repository has the `VITE_SUPABASE_URL` variable plus `UFCALENDAR_API_KEY` and `FIGHT_CATALOG_SERVER_KEY` secrets. Use a Supabase server key for the latter. Keep both keys out of frontend configuration. Reserve free-tier requests for manual backfills and avoid repeated workflow dispatches.
 
+For detailed statistics, run `node scripts/sync-ufc.js --stats <UFCalendar bout ID> --publish` after importing the completed bout. Pass up to two IDs. Publishing uses two calls for a finish and three for a decision. The daily card refresh preserves previously published stats and does not spend quota on the stats backfill.
+
 ## Checks
 
 - `npm test`: simulation persistence and prevention of simulated writes through the real adapter.

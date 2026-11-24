@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import FighterAvatar from '@/components/shared/FighterAvatar';
 import DisciplineBadge from '@/components/shared/DisciplineBadge';
 import StatusBadge from '@/components/shared/StatusBadge';
+import BoutStatistics from '@/components/shared/BoutStatistics';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const EVENT_TYPE_STYLES = {
@@ -273,6 +274,8 @@ export default function FightDetail() {
           </div>
         </div>
       )}
+
+      {isCompleted && <BoutStatistics statistics={fight.statistics} names={[fight.fighter_a_name, fight.fighter_b_name]} />}
 
       {/* Live Commentary Section */}
       <section>

@@ -5,6 +5,7 @@ import { loadEnv } from 'vite';
 const env = { ...loadEnv('development', process.cwd(), ''), ...process.env };
 const publish = process.argv.includes('--publish');
 const refresh = process.argv.includes('--refresh');
+const statsOnly = process.argv.includes('--stats');
 const source = 'sports_db';
 const origin = 'https://www.ufcalendar.com';
 let providerCalls = 0;
@@ -99,10 +100,56 @@ async function upsert(client, table, rows) {
   if (rows.length) await checked(client.from(table).upsert(rows, { defaultToNull: false }));
 }
 
+const cornerFields = [
+  'corner', 'knockdowns', 'sig_strikes_landed', 'sig_strikes_attempted',
+  'total_strikes_landed', 'total_strikes_attempted', 'takedowns_landed', 'takedowns_attempted',
+  'submission_attempts', 'reversals', 'control_time_sec',
+  ...['head', 'body', 'leg', 'distance', 'clinch', 'ground'].flatMap(area => [`${area}_landed`, `${area}_attempted`]),
+];
+
+const pick = (row, fields) => Object.fromEntries(fields.map(field => [field, row[field]]));
+
+async function readStats(boutId, includeJudges) {
+  const path = `fights/${boutId}`;
+  const totals = await get(`${path}/stats`);
+  const rounds = await get(`${path}/rounds`);
+  const scores = includeJudges ? await get(`${path}/scorecards`) : null;
+  if (!Array.isArray(totals) || !Array.isArray(rounds) || (scores && !Array.isArray(scores.cards))) {
+    throw new Error('UFCalendar returned unexpected fight statistics.');
+  }
+  return {
+    totals: totals.map(row => pick(row, cornerFields)),
+    rounds: rounds.map(row => pick(row, [...cornerFields, 'round_number'])),
+    scorecards: (scores?.cards ?? []).map(card => ({
+      ...pick(card, ['judge_id', 'judge_name', 'total_a', 'total_b', 'scores_known']),
+      rounds: (card.rounds ?? []).map(round => pick(round, ['round', 'a', 'b'])),
+    })),
+    scorecard_source: scores?.source ?? null,
+    fetched_at: new Date().toISOString(),
+  };
+}
+
+async function syncStats(client, ids) {
+  if (ids.length < 1 || ids.length > 2 || ids.some(id => !/^\d+$/.test(id))) {
+    throw new Error('Pass one or two UFCalendar bout IDs after --stats.');
+  }
+  for (const boutId of new Set(ids)) {
+    const id = idFor('fight', boutId);
+    const fight = client ? await checked(client.from('fight')
+      .select('method,status').eq('id', id).maybeSingle()) : null;
+    if (client && fight?.status !== 'completed') throw new Error(`Import completed bout ${boutId} before its statistics.`);
+    const statistics = await readStats(boutId, !client || /decision/i.test(fight.method ?? ''));
+    if (client) await checked(client.from('fight').update({ statistics }).eq('id', id).select('id').single());
+    console.log(`${client ? 'Synced' : 'Verified'} bout ${boutId}: ${statistics.totals.length} totals, ${statistics.rounds.length} round rows, ${statistics.scorecards.length} judges.`);
+  }
+  console.log(`UFCalendar calls: ${providerCalls}.`);
+}
+
 async function sync() {
   if (!env.UFCALENDAR_API_KEY) throw new Error('UFCALENDAR_API_KEY is missing.');
   const client = await writer();
-  const ids = process.argv.slice(2).filter(arg => !['--publish', '--refresh'].includes(arg));
+  const ids = process.argv.slice(2).filter(arg => !['--publish', '--refresh', '--stats'].includes(arg));
+  if (statsOnly) return syncStats(client, ids);
   if (ids.length > 2 || ids.some(id => !/^[a-z0-9-]+$/.test(id))) {
     throw new Error('Pass up to two UFCalendar event slugs, or omit slugs for one upcoming and one completed card.');
   }
