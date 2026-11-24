@@ -17,13 +17,15 @@ export default function EventDetail() {
     queryKey: ['event', id],
     queryFn: async () => {
       const events = await base44.entities.Event.filter({ id });
-      return events[0];
+      return events[0] ?? null;
     },
+    refetchInterval: query => query.state.data?.status === 'live' ? 30000 : false,
   });
 
   const { data: fights = [], isLoading: fightsLoading } = useQuery({
     queryKey: ['event-fights', id],
     queryFn: () => base44.entities.Fight.filter({ event_id: id }, 'order', 50),
+    refetchInterval: event?.status === 'live' ? 30000 : false,
   });
 
   const { data: fighters = [] } = useQuery({
@@ -50,12 +52,15 @@ export default function EventDetail() {
   // Categorize this event's fights through verification
   const { verified, needsReview } = categorizeFights(fights, [event], fighters);
   const displayableFights = [...verified, ...needsReview];
-  const fightTiers = {};
-  for (const f of displayableFights) fightTiers[f.fight.id] = f.verification.tier;
-
-  const mainCard = displayableFights.filter(f => f.fight.is_main_event);
-  const prelimCard = displayableFights.filter(f => !f.fight.is_main_event);
-  const quarantinedCount = fights.length - displayableFights.length;
+  const mainCard = displayableFights.filter(({ fight }) => fight.card_section === 'main' || fight.is_main_event);
+  const earlyPrelims = displayableFights.filter(({ fight }) => fight.card_section === 'early_prelims');
+  const prelimCard = displayableFights.filter(row => !mainCard.includes(row) && !earlyPrelims.includes(row));
+  const quarantinedCount = fights.filter(fight => fight.status !== 'cancelled').length - displayableFights.length;
+  const sections = [
+    { label: 'Main Card', startsAt: event.main_card_at, bouts: mainCard },
+    { label: mainCard.length ? 'Preliminary Card' : 'Fight Card', startsAt: event.prelims_at, bouts: prelimCard },
+    { label: 'Early Prelims', startsAt: event.early_prelims_at, bouts: earlyPrelims },
+  ];
 
   const isPartial = quarantinedCount > 0 || needsReview.length > 0;
 
@@ -123,28 +128,19 @@ export default function EventDetail() {
       {/* Fight Card */}
       {displayableFights.length > 0 ? (
         <div className="space-y-6">
-          {mainCard.length > 0 && (
-            <div>
-              <h2 className="font-heading text-lg font-bold uppercase tracking-wide mb-3 text-primary">Main Card</h2>
-              <div className="space-y-3">
-                {mainCard.map(f => (
-                  <FightCard key={f.fight.id} fight={f.fight} verificationTier={f.verification.tier} fighters={fighters} />
-                ))}
-              </div>
-            </div>
-          )}
-          {prelimCard.length > 0 && (
-            <div>
+          {sections.filter(section => section.bouts.length).map(section => (
+            <div key={section.label}>
               <h2 className="font-heading text-lg font-bold uppercase tracking-wide mb-3">
-                {mainCard.length > 0 ? 'Preliminary Card' : 'Fight Card'}
+                {section.label}
               </h2>
+              {section.startsAt && <p className="mb-3 text-sm text-muted-foreground">{format(new Date(section.startsAt), 'MMM d · h:mm a')}</p>}
               <div className="space-y-3">
-                {prelimCard.map(f => (
+                {section.bouts.map(f => (
                   <FightCard key={f.fight.id} fight={f.fight} verificationTier={f.verification.tier} fighters={fighters} />
                 ))}
               </div>
             </div>
-          )}
+          ))}
         </div>
       ) : (
         <EmptyState message="No fights announced yet" />
