@@ -65,7 +65,7 @@ function CommentaryTicker({ events }) {
   );
 }
 
-function AddCommentaryForm({ fight, confirmedResultsFeed }) {
+function AddCommentaryForm({ fight }) {
   const fightId = fight.id;
   const qc = useQueryClient();
   const [text, setText] = useState('');
@@ -78,9 +78,8 @@ function AddCommentaryForm({ fight, confirmedResultsFeed }) {
     mutationFn: (data) => base44.entities.FightEvent.create(data),
     onSuccess: () => { qc.invalidateQueries(['fight-events', fightId]); setText(''); setTime(''); },
   });
-  const validTime = !confirmedResultsFeed || !time.trim() || /^(?:[0-4]:[0-5]\d|5:00)$/.test(time.trim());
   const maxRounds = fight.rounds || 5;
-  const canPost = text.trim() && text.trim().length <= 500 && validTime
+  const canPost = text.trim() && text.trim().length <= 500
     && Number.isInteger(round) && round >= 1 && round <= maxRounds && !createMutation.isPending;
 
   return (
@@ -91,7 +90,7 @@ function AddCommentaryForm({ fight, confirmedResultsFeed }) {
       <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Post an Observed Fight Update</p>
       <div className="flex gap-2">
         <select aria-label="Update type" value={type} onChange={e => setType(e.target.value)} className="flex-1 bg-background border border-border/60 rounded-lg px-3 py-2 text-sm">
-          {Object.keys(EVENT_TYPE_STYLES).filter(t => !confirmedResultsFeed || t !== 'fight_end').map(t => <option key={t} value={t}>{t.replaceAll('_', ' ')}</option>)}
+          {Object.keys(EVENT_TYPE_STYLES).map(t => <option key={t} value={t}>{t.replaceAll('_', ' ')}</option>)}
         </select>
         <input aria-label="Round" value={round} onChange={e => setRound(Number(e.target.value))} type="number" min={1} max={maxRounds} placeholder="Rnd" className="w-16 bg-background border border-border/60 rounded-lg px-3 py-2 text-sm" />
         <input aria-label="Round clock, minutes and seconds" value={time} onChange={e => setTime(e.target.value)} placeholder="2:34" className="w-20 bg-background border border-border/60 rounded-lg px-3 py-2 text-sm" />
@@ -105,7 +104,6 @@ function AddCommentaryForm({ fight, confirmedResultsFeed }) {
         <textarea aria-label="Update text" maxLength={500} value={text} onChange={e => setText(e.target.value)} placeholder="Describe what just happened..." rows={2} className="flex-1 bg-background border border-border/60 rounded-lg px-3 py-2 text-sm resize-none" />
 
       </div>
-      {!validTime && <p className="text-sm text-red-400">Enter a round clock between 0:00 and 5:00.</p>}
       {createMutation.isError && <p role="alert" className="text-sm text-red-400">The update couldn’t be posted. Check access and try again.</p>}
       <button type="submit"
         disabled={!canPost}
@@ -178,6 +176,7 @@ export default function FightDetail() {
   const isCompleted = fight.status === 'completed';
   const isLive = fight.status === 'live';
   const isResultsFeed = fight.card_source_url?.startsWith('https://www.ufcalendar.com/events/');
+  const isUfc = isResultsFeed || event?.organization?.toUpperCase() === 'UFC';
   const aWon = fight.winner_name === fight.fighter_a_name;
   const bWon = fight.winner_name === fight.fighter_b_name;
 
@@ -319,16 +318,16 @@ export default function FightDetail() {
         ) : (
           <div className="flex flex-col items-center justify-center py-10 gap-2 rounded-xl border border-border/40 bg-card/30">
             <Radio className="w-8 h-8 text-muted-foreground/20" />
-            <p className="text-sm text-muted-foreground">{watchUpdates ? 'Waiting for fight updates.' : isResultsFeed
+            <p className="text-sm text-muted-foreground">{isResultsFeed
               ? 'Confirmed results appear after the next catalog refresh.'
-              : isLive ? 'Waiting for first event...' : 'No commentary recorded for this fight.'}</p>
+              : watchUpdates ? 'Waiting for fight updates.' : 'No commentary recorded for this fight.'}</p>
           </div>
         )}
 
         {/* Admin commentary input */}
-        {isAdmin && (!isResultsFeed || ['scheduled', 'live'].includes(fight.status)) && (
+        {isAdmin && event && !isUfc && (
           <div className="mt-4">
-            <AddCommentaryForm key={id} fight={fight} confirmedResultsFeed={isResultsFeed} />
+            <AddCommentaryForm key={id} fight={fight} />
           </div>
         )}
       </section>
