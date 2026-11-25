@@ -264,11 +264,14 @@ export default function FightDetail() {
               { label: 'Wins', a: fighterA?.wins, b: fighterB?.wins },
               { label: 'Losses', a: fighterA?.losses, b: fighterB?.losses },
               { label: 'Ranking', a: fighterA?.ranking, b: fighterB?.ranking },
+              { label: 'Height (cm)', a: fighterA?.height_cm, b: fighterB?.height_cm },
+              { label: 'Reach (cm)', a: fighterA?.reach_cm, b: fighterB?.reach_cm },
+              { label: 'Listed weight (lb)', a: fighterA?.profile_weight_lbs, b: fighterB?.profile_weight_lbs },
             ].filter(s => s.a != null || s.b != null).map(({ label, a, b }) => (
               <div key={label} className="flex items-center gap-3">
-                <span className="text-sm font-bold w-8 text-right">{a ?? '—'}</span>
+                <span className="text-sm font-bold w-14 text-right">{a ?? '—'}</span>
                 <div className="flex-1 text-center text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</div>
-                <span className="text-sm font-bold w-8">{b ?? '—'}</span>
+                <span className="text-sm font-bold w-14">{b ?? '—'}</span>
               </div>
             ))}
           </div>

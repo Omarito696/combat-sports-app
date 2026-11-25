@@ -154,12 +154,18 @@ async function sync() {
     throw new Error('Pass up to two UFCalendar event slugs, or omit slugs for one upcoming and one completed card.');
   }
   if (!ids.length && refresh) {
-    const from = new Date(Date.now() - 7 * 86_400_000).toISOString().slice(0, 10);
+    const now = new Date();
+    const from = new Date(now.getTime() - 3 * 86_400_000).toISOString().slice(0, 10);
     const events = await get(`events?org=ufc&from=${from}&limit=25`);
-    const active = events.find(event => event.status === 'live')
-      ?? events.find(event => ['announced', 'scheduled'].includes(event.status));
+    const upcoming = events.filter(event => ['announced', 'scheduled'].includes(event.status));
+    const live = events.find(event => event.status === 'live');
+    const active = live ?? upcoming[0];
     const completed = events.findLast(event => event.status === 'completed');
-    ids.push(...[active?.slug, completed?.slug].filter(Boolean));
+    // Keep one call available for recent results, then rotate through more announced cards.
+    const laterCards = live ? upcoming : upcoming.slice(1);
+    const day = Math.floor(now.getTime() / 86_400_000);
+    const secondary = completed ?? (laterCards.length ? laterCards[day % laterCards.length] : null);
+    ids.push(...[active?.slug, secondary?.slug].filter(Boolean));
   } else if (!ids.length) {
     for (const status of ['upcoming', 'completed']) {
       const events = await get(`events?org=ufc&status=${status}&limit=1`);

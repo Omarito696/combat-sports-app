@@ -150,11 +150,18 @@ export default function FighterProfile() {
   });
 
   const { data: fights = [] } = useQuery({
-    queryKey: ['fighter-fights', decodedName],
-    queryFn: () => base44.entities.Fight.list('order', 200).then(all =>
-      all.filter(f => f.fighter_a_name === decodedName || f.fighter_b_name === decodedName)
-    ),
+    queryKey: ['fighter-fights', profile?.id, decodedName],
+    queryFn: async () => {
+      const groups = await Promise.all(['a', 'b'].flatMap(corner => [
+        base44.entities.Fight.filter({ [`fighter_${corner}_name`]: decodedName }, '-created_date', 100),
+        ...(profile?.id ? [base44.entities.Fight.filter({ [`fighter_${corner}_id`]: profile.id }, '-created_date', 100)] : []),
+      ]));
+      return [...new Map(groups.flat().map(fight => [fight.id, fight])).values()]
+        .sort((a, b) => String(b.created_date).localeCompare(String(a.created_date)));
+    },
   });
+  const titleFightWins = fights.filter(fight => fight.is_title_fight && fight.status === 'completed'
+    && (fight.winner_id ? fight.winner_id === profile?.id : fight.winner_name === decodedName));
 
   const TABS = [
     { id: 'overview', label: 'Overview' },
@@ -272,6 +279,19 @@ export default function FighterProfile() {
       {/* Overview */}
       {activeTab === 'overview' && (
         <div className="space-y-4">
+          {titleFightWins.length > 0 && (
+            <section className="rounded-xl border border-border/40 bg-card/40 p-4">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Recorded Title Fight Wins</h2>
+              <ul className="mt-2 space-y-1 text-sm">
+                {titleFightWins.map(fight => (
+                  <li key={fight.id}><Link className="text-primary hover:underline" to={`/fights/${fight.id}`}>
+                    {fight.weight_class ? `${fight.weight_class} · ` : ''}
+                    {fight.fighter_a_name} vs. {fight.fighter_b_name}
+                  </Link></li>
+                ))}
+              </ul>
+            </section>
+          )}
           {profile.biography ? (
             <div className="rounded-xl border border-border/40 bg-card/40 p-4">
               <div className="flex items-center justify-between mb-2">
@@ -292,10 +312,10 @@ export default function FighterProfile() {
           {fights.length === 0 ? (
             <NoLiveData message="No fight records in database for this fighter." />
           ) : fights.map(fight => {
-            const isA = fight.fighter_a_name === decodedName;
+            const isA = fight.fighter_a_id === profile.id || fight.fighter_a_name === decodedName;
             const opponent = isA ? fight.fighter_b_name : fight.fighter_a_name;
-            const won = fight.winner_name === decodedName;
-            const lost = fight.winner_name && fight.winner_name !== decodedName;
+            const won = fight.winner_id ? fight.winner_id === profile.id : fight.winner_name === decodedName;
+            const lost = Boolean(fight.winner_id || fight.winner_name) && !won;
             return (
               <Link key={fight.id} to={`/fights/${fight.id}`}
                 className="flex items-center gap-3 p-3 rounded-xl border border-border/40 bg-card/40 hover:border-primary/30 transition-all">
