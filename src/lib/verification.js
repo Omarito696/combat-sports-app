@@ -122,7 +122,8 @@ export function verifyUpcomingFight(fight, event, fighters, allFights = []) {
       if (f.id === fight.id) return false;
       const names = [f.fighter_a_name?.toLowerCase(), f.fighter_b_name?.toLowerCase()].sort();
       const thisNames = [fight.fighter_a_name?.toLowerCase(), fight.fighter_b_name?.toLowerCase()].sort();
-      return names[0] === thisNames[0] && names[1] === thisNames[1] && f.status === 'completed';
+      return names[0] === thisNames[0] && names[1] === thisNames[1] && f.status === 'completed'
+        && (!f.event_id || f.event_id === fight.event_id);
     });
     if (dupes.length > 0) {
       issues.push(`Matchup already exists as completed fight — possible rematch or data conflict`);

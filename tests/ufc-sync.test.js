@@ -1,10 +1,27 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { fightRow, removedBoutIds, resultTickerRows } from '../scripts/sync-ufc.js';
+import { detailRequestBudget, fightRow, removedBoutIds, resultTickerRows } from '../scripts/sync-ufc.js';
+import { DISPLAY_TIER, verifyUpcomingFight } from '../src/lib/verification.js';
 
 const url = 'https://www.ufcalendar.com/events/example';
 const first = { id: 5, status: 'scheduled', fighter_a: { id: 1, name: 'Fighter A' }, fighter_b: { id: 2, name: 'Fighter B' } };
 const map = bout => fightRow(bout, 'event-id', url);
+
+test('scheduled refresh reserves one request per remaining UTC day', () => {
+  const now = new Date('2026-11-25T11:25:00Z');
+  assert.equal(detailRequestBudget(5, now), 0);
+  assert.equal(detailRequestBudget(6, now), 1);
+  assert.equal(detailRequestBudget(9, now), 2);
+  assert.equal(detailRequestBudget(2, new Date('2026-11-30T23:59:00Z')), 2);
+});
+
+test('a completed bout on a different UFC card does not hide a rematch', () => {
+  const scheduled = map(first);
+  const past = fightRow({ ...first, id: 6, status: 'completed' }, 'older-card', url);
+  const event = { date: '2099-01-01T12:00:00Z', status: 'upcoming', date_source_url: url };
+  const fighters = [first.fighter_a, first.fighter_b];
+  assert.equal(verifyUpcomingFight(scheduled, event, fighters, [scheduled, past]).tier, DISPLAY_TIER.VERIFIED_UPCOMING);
+});
 
 test('a replacement on the same provider bout updates the existing row and the linked opponent', () => {
   const original = map(first);
