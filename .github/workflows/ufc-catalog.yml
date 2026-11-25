@@ -9,6 +9,14 @@ on:
         description: UFCalendar event slug for a one-card fight-night refresh
         required: false
         type: string
+      bout_ids:
+        description: One or two numeric UFCalendar bout IDs for statistics
+        required: false
+        type: string
+      fighter_ids:
+        description: Up to six numeric UFCalendar fighter IDs for profiles
+        required: false
+        type: string
 
 concurrency:
   group: ufc-catalog
@@ -43,12 +51,28 @@ jobs:
       - name: Install dependencies
         if: steps.config.outputs.ready == 'true'
         run: npm ci
-      - name: Refresh latest UFC cards
+      - name: Refresh UFC catalog
         if: steps.config.outputs.ready == 'true'
         env:
           UFC_EVENT_SLUG: ${{ inputs.event_slug }}
+          UFC_BOUT_IDS: ${{ inputs.bout_ids }}
+          UFC_FIGHTER_IDS: ${{ inputs.fighter_ids }}
         run: |
-          if [ -n "$UFC_EVENT_SLUG" ]; then
+          count=0
+          for input in "$UFC_EVENT_SLUG" "$UFC_BOUT_IDS" "$UFC_FIGHTER_IDS"; do
+            if [ -n "$input" ]; then count=$((count + 1)); fi
+          done
+          if [ "$count" -gt 1 ]; then
+            echo "::error::Choose only one event, bout, or fighter input."
+            exit 1
+          fi
+          if [ -n "$UFC_BOUT_IDS" ]; then
+            read -r -a ids <<< "$UFC_BOUT_IDS"
+            node scripts/sync-ufc.js --publish --stats "${ids[@]}"
+          elif [ -n "$UFC_FIGHTER_IDS" ]; then
+            read -r -a ids <<< "$UFC_FIGHTER_IDS"
+            node scripts/sync-ufc.js --publish --profiles "${ids[@]}"
+          elif [ -n "$UFC_EVENT_SLUG" ]; then
             node scripts/sync-ufc.js --publish --refresh "$UFC_EVENT_SLUG"
           else
             node scripts/sync-ufc.js --publish --refresh
