@@ -2,6 +2,7 @@ import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 import StatusBadge from './StatusBadge';
 import FighterAvatar from './FighterAvatar';
+import { requiresUfcHeadshot } from '@/lib/fighterImage';
 import DisciplineBadge from './DisciplineBadge';
 import { DISPLAY_TIER } from '@/lib/verification';
 import { fightOutcome } from '@/lib/fightOutcome';
@@ -66,7 +67,7 @@ export default function FightCard({ fight, event, verificationTier, fighters = [
         <div className="flex items-center gap-3">
           {/* Fighter A */}
           <div className={cn("flex-1 flex flex-col items-center gap-1.5 text-center transition-opacity", bWon && "opacity-40")}>
-            <FighterAvatar fighter={fighterA} size="md" />
+            <FighterAvatar fighter={fighterA} size="md" officialUfc={requiresUfcHeadshot(event, fight)} />
             <p className={cn("font-heading text-sm font-bold uppercase tracking-wide leading-tight", aWon && "text-primary")}>
               {fight.fighter_a_name}
             </p>
@@ -96,7 +97,7 @@ export default function FightCard({ fight, event, verificationTier, fighters = [
 
           {/* Fighter B */}
           <div className={cn("flex-1 flex flex-col items-center gap-1.5 text-center transition-opacity", aWon && "opacity-40")}>
-            <FighterAvatar fighter={fighterB} size="md" />
+            <FighterAvatar fighter={fighterB} size="md" officialUfc={requiresUfcHeadshot(event, fight)} />
             <p className={cn("font-heading text-sm font-bold uppercase tracking-wide leading-tight", bWon && "text-primary")}>
               {fight.fighter_b_name}
             </p>

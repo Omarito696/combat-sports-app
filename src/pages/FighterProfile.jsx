@@ -7,7 +7,7 @@ import { ArrowLeft, Globe, Video, ExternalLink, AlertCircle } from 'lucide-react
 import { cn } from '@/lib/utils';
 import DisciplineBadge from '@/components/shared/DisciplineBadge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { resolveFighterImage, fetchWikipediaPortrait } from '@/lib/fighterImage';
+import { resolveFighterImage, fetchWikipediaPortrait, requiresUfcHeadshot } from '@/lib/fighterImage';
 import { format } from 'date-fns';
 
 function SourceLabel({ source }) {
@@ -89,6 +89,7 @@ function VideoCard({ video }) {
 // Large portrait for the profile header — rectangular, face-biased crop
 function FighterHeroImage({ fighter }) {
   const name = fighter?.name || '';
+  const strict = requiresUfcHeadshot(fighter);
   const { url: staticUrl } = resolveFighterImage(fighter);
   const [imgUrl, setImgUrl] = useState(staticUrl);
   const [imgError, setImgError] = useState(false);
@@ -98,12 +99,12 @@ function FighterHeroImage({ fighter }) {
     const { url } = resolveFighterImage(fighter);
     if (url) {
       setImgUrl(url);
-    } else if (name) {
+    } else if (!strict && name) {
       fetchWikipediaPortrait(name).then(wikiUrl => setImgUrl(wikiUrl));
     }
-  }, [fighter?.preferred_profile_image_url, fighter?.image_url, name]);
+  }, [fighter?.preferred_profile_image_url, fighter?.image_url, name, strict]);
 
-  const displayUrl = imgError ? null : imgUrl;
+  const displayUrl = imgError ? null : strict ? staticUrl : imgUrl;
   const initials = name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
 
   return (

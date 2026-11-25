@@ -95,8 +95,24 @@ export async function fetchWikipediaPortrait(name) {
  *   - Unverified images without preferred override are skipped
  *   - Wikipedia only used as last resort
  */
-export function resolveFighterImage(fighter) {
+export function requiresUfcHeadshot(fighter, fight) {
+  return fighter?.organization?.toUpperCase() === 'UFC'
+    || fight?.organization?.toUpperCase() === 'UFC'
+    || Boolean(fight?.card_source_url?.startsWith('https://www.ufcalendar.com/events/'));
+}
+
+export function resolveFighterImage(fighter, officialUfc = false) {
   if (!fighter) return { url: null, source: null, source_type: null, rank: null };
+
+  if (officialUfc || requiresUfcHeadshot(fighter)) {
+    const sourceType = fighter.image_source_type;
+    if (fighter.image_source === 'ufc_licensed' && fighter.image_confidence === 'verified'
+      && !fighter.image_pending_review && ['official_org', 'media_day', 'publicity_headshot'].includes(sourceType)
+      && fighter.image_url) {
+      return { url: fighter.image_url, source: 'UFC licensed headshot', source_type: sourceType, rank: 0 };
+    }
+    return { url: null, source: null, source_type: null, rank: null };
+  }
 
   // 1. Admin-approved override — always wins
   if (fighter.preferred_profile_image_url) {
