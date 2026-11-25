@@ -9,6 +9,7 @@ import FighterAvatar from '@/components/shared/FighterAvatar';
 import DisciplineBadge from '@/components/shared/DisciplineBadge';
 import StatusBadge from '@/components/shared/StatusBadge';
 import BoutStatistics from '@/components/shared/BoutStatistics';
+import { fightOutcome } from '@/lib/fightOutcome';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const EVENT_TYPE_STYLES = {
@@ -177,8 +178,12 @@ export default function FightDetail() {
   const isLive = fight.status === 'live';
   const isResultsFeed = fight.card_source_url?.startsWith('https://www.ufcalendar.com/events/');
   const isUfc = isResultsFeed || event?.organization?.toUpperCase() === 'UFC';
-  const aWon = fight.winner_name === fight.fighter_a_name;
-  const bWon = fight.winner_name === fight.fighter_b_name;
+  const outcome = fightOutcome(fight);
+  const aWon = outcome?.corner === 'a';
+  const bWon = outcome?.corner === 'b';
+  const sectionStartsAt = ({
+    main: event?.main_card_at, prelims: event?.prelims_at, early_prelims: event?.early_prelims_at,
+  })[fight.card_section];
 
   return (
     <div className="space-y-6 pb-24 md:pb-8 max-w-2xl mx-auto">
@@ -195,6 +200,11 @@ export default function FightDetail() {
           {event.date && <span className="text-xs text-muted-foreground">· {format(parseISO(event.date), 'MMM d, yyyy')}</span>}
           <StatusBadge status={fight.status} />
         </div>
+      )}
+      {fight.status === 'scheduled' && sectionStartsAt && (
+        <p className="text-sm text-muted-foreground">
+          Card section starts {format(parseISO(sectionStartsAt), 'MMM d · h:mm a')}
+        </p>
       )}
 
       {/* Title fight / main event banners */}
@@ -218,7 +228,7 @@ export default function FightDetail() {
         )}
         <div className="flex items-center gap-4">
           {/* Fighter A */}
-          <div className={cn("flex-1 flex flex-col items-center gap-3 text-center", isCompleted && !aWon && "opacity-40")}>
+          <div className={cn("flex-1 flex flex-col items-center gap-3 text-center", bWon && "opacity-40")}>
             <FighterAvatar fighter={fighterA || { name: fight.fighter_a_name }} size="xl" />
             {aWon && <Crown className="w-5 h-5 text-amber-400" />}
             <div>
@@ -232,11 +242,11 @@ export default function FightDetail() {
 
           {/* VS / Result */}
           <div className="flex flex-col items-center shrink-0 gap-2">
-            {isCompleted && fight.winner_name ? (
+            {outcome ? (
               <div className="text-center">
-                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Winner</p>
-                <p className="font-heading text-sm font-bold text-primary uppercase">{fight.winner_name?.split(' ').pop()}</p>
-                {fight.method && <p className="text-xs text-muted-foreground mt-1">{fight.method}</p>}
+                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">{outcome.label}</p>
+                {outcome.corner && <p className="font-heading text-sm font-bold text-primary uppercase">{fight[`fighter_${outcome.corner}_name`]?.split(' ').pop()}</p>}
+                {fight.method && fight.method.toLowerCase() !== outcome.label.toLowerCase() && <p className="text-xs text-muted-foreground mt-1">{fight.method}</p>}
                 {fight.finish_round && <p className="text-xs text-muted-foreground">R{fight.finish_round} · {fight.finish_time}</p>}
               </div>
             ) : (
@@ -246,7 +256,7 @@ export default function FightDetail() {
           </div>
 
           {/* Fighter B */}
-          <div className={cn("flex-1 flex flex-col items-center gap-3 text-center", isCompleted && !bWon && "opacity-40")}>
+          <div className={cn("flex-1 flex flex-col items-center gap-3 text-center", aWon && "opacity-40")}>
             <FighterAvatar fighter={fighterB || { name: fight.fighter_b_name }} size="xl" />
             {bWon && <Crown className="w-5 h-5 text-amber-400" />}
             <div>
@@ -301,6 +311,8 @@ export default function FightDetail() {
       )}
 
       {isCompleted && <BoutStatistics statistics={fight.statistics} names={[fight.fighter_a_name, fight.fighter_b_name]} />}
+      {isResultsFeed && <a className="text-xs text-muted-foreground hover:underline"
+        href={fight.card_source_url} target="_blank" rel="noreferrer">Card and result source · UFCalendar</a>}
 
       {/* Live Commentary Section */}
       <section>

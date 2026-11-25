@@ -3,14 +3,16 @@ import StatusBadge from './StatusBadge';
 import FighterAvatar from './FighterAvatar';
 import DisciplineBadge from './DisciplineBadge';
 import { DISPLAY_TIER } from '@/lib/verification';
+import { fightOutcome } from '@/lib/fightOutcome';
 import { Trophy, Crown, Clock, AlertTriangle } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 
 export default function FightCard({ fight, event, verificationTier, fighters = [] }) {
   const isReview = verificationTier === DISPLAY_TIER.ADMIN_REVIEW;
   const isCompleted = fight.status === 'completed';
-  const aWon = fight.winner_name === fight.fighter_a_name;
-  const bWon = fight.winner_name === fight.fighter_b_name;
+  const outcome = fightOutcome(fight);
+  const aWon = outcome?.corner === 'a';
+  const bWon = outcome?.corner === 'b';
 
   // Use real Fighter entities for images — searches the fighters list passed from parent pages
   const fighterA = fighters.find(f => f.name === fight.fighter_a_name) || { name: fight.fighter_a_name };
@@ -62,7 +64,7 @@ export default function FightCard({ fight, event, verificationTier, fighters = [
         {/* Matchup with avatars */}
         <div className="flex items-center gap-3">
           {/* Fighter A */}
-          <div className={cn("flex-1 flex flex-col items-center gap-1.5 text-center transition-opacity", isCompleted && !aWon && "opacity-40")}>
+          <div className={cn("flex-1 flex flex-col items-center gap-1.5 text-center transition-opacity", bWon && "opacity-40")}>
             <FighterAvatar fighter={fighterA} size="md" />
             <p className={cn("font-heading text-sm font-bold uppercase tracking-wide leading-tight", aWon && "text-primary")}>
               {fight.fighter_a_name}
@@ -77,8 +79,10 @@ export default function FightCard({ fight, event, verificationTier, fighters = [
 
           {/* VS / Result */}
           <div className="flex flex-col items-center shrink-0 gap-1">
-            {isCompleted && fight.winner_name ? (
+            {outcome?.corner ? (
               <Trophy className="w-5 h-5 text-primary" />
+            ) : outcome ? (
+              <span className="text-xs font-bold text-muted-foreground">{outcome.label}</span>
             ) : fight.status === 'live' ? (
               <span className="text-[10px] font-bold text-red-400 flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" /> LIVE
@@ -90,7 +94,7 @@ export default function FightCard({ fight, event, verificationTier, fighters = [
           </div>
 
           {/* Fighter B */}
-          <div className={cn("flex-1 flex flex-col items-center gap-1.5 text-center transition-opacity", isCompleted && !bWon && "opacity-40")}>
+          <div className={cn("flex-1 flex flex-col items-center gap-1.5 text-center transition-opacity", aWon && "opacity-40")}>
             <FighterAvatar fighter={fighterB} size="md" />
             <p className={cn("font-heading text-sm font-bold uppercase tracking-wide leading-tight", bWon && "text-primary")}>
               {fight.fighter_b_name}

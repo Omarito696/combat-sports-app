@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { createClient } from '@supabase/supabase-js';
 import { loadEnv } from 'vite';
+import { fightOutcome } from '../src/lib/fightOutcome.js';
 
 const env = { ...loadEnv('development', process.cwd(), ''), ...process.env };
 const publish = process.argv.includes('--publish');
@@ -54,7 +55,11 @@ function fighterRow(fighter, division, profile) {
 
 function fightRow(bout, eventId, url) {
   const { fighter_a: a, fighter_b: b, result } = bout;
-  const winner = [a, b].find(fighter => fighter.id === result?.winner_fighter_id);
+  const method = bout.status === 'no_contest' ? 'No contest' : result?.method ?? null;
+  const reportedWinner = [a, b].find(fighter => fighter.id === result?.winner_fighter_id);
+  const winner = fightOutcome({ status: 'completed', method, winner_name: reportedWinner?.name,
+    fighter_a_name: a.name, fighter_b_name: b.name })?.corner ? reportedWinner : null;
+  const hasResult = Boolean(result) || bout.status === 'no_contest';
   const status = ({ announced: 'scheduled', upcoming: 'scheduled', scheduled: 'scheduled', live: 'live', completed: 'completed',
     no_contest: 'completed', cancelled: 'cancelled', canceled: 'cancelled' })[bout.status];
   if (!status) throw new Error(`Unsupported UFCalendar bout status: ${bout.status}.`);
@@ -66,9 +71,10 @@ function fightRow(bout, eventId, url) {
     card_section: bout.card_section ?? null,
     rounds: bout.scheduled_rounds, status,
     winner_id: winner ? idFor('fighter', winner.id) : null, winner_name: winner?.name ?? null,
-    method: result?.method ?? null, finish_round: result?.round ?? null, finish_time: result?.time ?? null,
-    result_source_url: result ? url : null, result_source_type: result ? source : null,
-    result_confidence: result ? 'medium' : 'low', card_source_url: url, card_source_type: source,
+    method,
+    finish_round: result?.round ?? null, finish_time: result?.time ?? null,
+    result_source_url: hasResult ? url : null, result_source_type: hasResult ? source : null,
+    result_confidence: hasResult ? 'medium' : 'low', card_source_url: url, card_source_type: source,
   };
 }
 
@@ -203,7 +209,8 @@ async function sync() {
     const ticker = fights.filter(fight => fight.status === 'completed' && fight.method).map(fight => ({
       id: idFor('result', fight.id), fight_id: fight.id, type: 'fight_end',
       round: fight.finish_round, time: fight.finish_time, fighter_name: fight.winner_name,
-      description: fight.winner_name ? `${fight.winner_name} wins by ${fight.method}.` : `Result: ${fight.method}.`,
+      description: fightOutcome(fight)?.corner && fight.winner_name
+        ? `${fight.winner_name} wins by ${fight.method}.` : `Result: ${fight.method}.`,
     }));
     if (client) {
       if (!fights.length && !disrupted) throw new Error('Refusing to publish an empty card.');
