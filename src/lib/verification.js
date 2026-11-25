@@ -12,6 +12,8 @@
  *   quarantined_unverified — Cannot verify. Do NOT display publicly.
  */
 
+import { fightOutcome } from './fightOutcome.js';
+
 export const DISPLAY_TIER = {
   VERIFIED_UPCOMING: 'verified_upcoming',
   VERIFIED_HISTORICAL: 'verified_historical',
@@ -157,7 +159,9 @@ export function verifyHistoricalFight(fight, event, fighters) {
   }
 
   // Result completeness
-  if (!fight.winner_name) issues.push('No winner recorded');
+  const outcome = fightOutcome(fight);
+  const missingOutcome = !outcome || outcome.label === 'Result unavailable';
+  if (missingOutcome) issues.push('No result recorded');
   if (!fight.method) issues.push('No method recorded');
 
   // RESULT SOURCE — CRITICAL: fabricated results can't pass
@@ -201,7 +205,7 @@ export function verifyHistoricalFight(fight, event, fighters) {
   }
 
   // Missing results entirely → quarantined
-  const noResult = !fight.winner_name || !fight.method;
+  const noResult = missingOutcome || !fight.method;
   if (noResult) {
     if (hasBothFighters && event) {
       return { tier: DISPLAY_TIER.ADMIN_REVIEW, valid: false, issues, displayable: true };
