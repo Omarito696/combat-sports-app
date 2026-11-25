@@ -8,6 +8,7 @@ const env = { ...loadEnv('development', process.cwd(), ''), ...process.env };
 const publish = process.argv.includes('--publish');
 const refresh = process.argv.includes('--refresh');
 const statsOnly = process.argv.includes('--stats');
+const profilesOnly = process.argv.includes('--profiles');
 const source = 'sports_db';
 const origin = 'https://www.ufcalendar.com';
 let providerCalls = 0;
@@ -167,11 +168,34 @@ async function syncStats(client, ids) {
   console.log(`UFCalendar calls: ${providerCalls}.`);
 }
 
+async function syncProfiles(client, ids) {
+  if (!ids.length || ids.length > 6 || ids.some(id => !/^\d+$/.test(id))) {
+    throw new Error('Pass one to six UFCalendar fighter IDs after --profiles.');
+  }
+  for (const providerId of new Set(ids)) {
+    const id = idFor('fighter', providerId);
+    if (client) {
+      const existing = await checked(client.from('fighter').select('id').eq('id', id)
+        .eq('organization', 'UFC').maybeSingle());
+      if (!existing) throw new Error(`Import UFC fighter ${providerId} on a card before refreshing their profile.`);
+    }
+    const profile = await get(`fighters/${providerId}`);
+    if (String(profile.id) !== providerId) throw new Error('UFCalendar returned a different fighter ID.');
+    const row = fighterRow(profile, null, profile);
+    const details = Object.fromEntries(Object.entries(row).filter(([field, value]) => field !== 'id' && value != null));
+    if (client) await checked(client.from('fighter').update(details).eq('id', id).select('id').single());
+    console.log(`${client ? 'Synced' : 'Verified'} fighter ${providerId}: ${profile.name}.`);
+  }
+  console.log(`UFCalendar calls: ${providerCalls}.`);
+}
+
 async function sync() {
   if (!env.UFCALENDAR_API_KEY) throw new Error('UFCALENDAR_API_KEY is missing.');
   const client = await writer();
-  const ids = process.argv.slice(2).filter(arg => !['--publish', '--refresh', '--stats'].includes(arg));
+  const ids = process.argv.slice(2).filter(arg => !['--publish', '--refresh', '--stats', '--profiles'].includes(arg));
+  if (statsOnly && profilesOnly) throw new Error('Choose one backfill mode per run.');
   if (statsOnly) return syncStats(client, ids);
+  if (profilesOnly) return syncProfiles(client, ids);
   if (ids.length > 2 || ids.some(id => !/^[a-z0-9-]+$/.test(id))) {
     throw new Error('Pass up to two UFCalendar event slugs, or omit slugs for one upcoming and one completed card.');
   }
