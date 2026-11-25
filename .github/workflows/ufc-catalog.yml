@@ -4,6 +4,11 @@ on:
   schedule:
     - cron: '25 11 * * *'
   workflow_dispatch:
+    inputs:
+      event_slug:
+        description: UFCalendar event slug for a one-card fight-night refresh
+        required: false
+        type: string
 
 concurrency:
   group: ufc-catalog
@@ -40,4 +45,11 @@ jobs:
         run: npm ci
       - name: Refresh latest UFC cards
         if: steps.config.outputs.ready == 'true'
-        run: node scripts/sync-ufc.js --publish --refresh
+        env:
+          UFC_EVENT_SLUG: ${{ inputs.event_slug }}
+        run: |
+          if [ -n "$UFC_EVENT_SLUG" ]; then
+            node scripts/sync-ufc.js --publish --refresh "$UFC_EVENT_SLUG"
+          else
+            node scripts/sync-ufc.js --publish --refresh
+          fi

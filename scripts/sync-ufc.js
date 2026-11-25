@@ -161,10 +161,14 @@ async function sync() {
     const live = events.find(event => event.status === 'live');
     const active = live ?? upcoming[0];
     const completed = events.findLast(event => event.status === 'completed');
+    const disrupted = events.filter(event => ['cancelled', 'postponed'].includes(event.status));
+    const watched = client && disrupted.length ? await checked(client.from('event').select('id')
+      .in('id', disrupted.map(event => idFor('event', event.id))).in('status', ['upcoming', 'live'])) : [];
+    const changed = disrupted.find(event => watched.some(row => row.id === idFor('event', event.id)));
     // Keep one call available for recent results, then rotate through more announced cards.
     const laterCards = live ? upcoming : upcoming.slice(1);
     const day = Math.floor(now.getTime() / 86_400_000);
-    const secondary = completed ?? (laterCards.length ? laterCards[day % laterCards.length] : null);
+    const secondary = changed ?? completed ?? (laterCards.length ? laterCards[day % laterCards.length] : null);
     ids.push(...[active?.slug, secondary?.slug].filter(Boolean));
   } else if (!ids.length) {
     for (const status of ['upcoming', 'completed']) {
@@ -178,7 +182,7 @@ async function sync() {
       throw new Error('Expected a UFC event with a full card.');
     }
     const status = ({ announced: 'upcoming', scheduled: 'upcoming', upcoming: 'upcoming',
-      live: 'live', completed: 'completed' })[event.status];
+      live: 'live', completed: 'completed', cancelled: 'cancelled', postponed: 'postponed' })[event.status];
     if (!status) throw new Error(`Unsupported event status: ${event.status}.`);
     const eventId = idFor('event', event.id);
     const url = `${origin}/events/${event.slug}`;
@@ -193,19 +197,25 @@ async function sync() {
     const lead = bouts[0]?.fighter_a;
     const profile = lead && !refresh ? await get(`fighters/${encodeURIComponent(lead.slug)}`) : null;
     if (profile) fighters.set(lead.id, fighterRow(lead, bouts[0].weight_class, profile));
-    const fights = bouts.map(bout => fightRow(bout, eventId, url));
+    const disrupted = ['cancelled', 'postponed'].includes(status);
+    const fights = bouts.map(bout => fightRow(disrupted && !bout.result
+      ? { ...bout, status: 'cancelled' } : bout, eventId, url));
     const ticker = fights.filter(fight => fight.status === 'completed' && fight.method).map(fight => ({
       id: idFor('result', fight.id), fight_id: fight.id, type: 'fight_end',
       round: fight.finish_round, time: fight.finish_time, fighter_name: fight.winner_name,
       description: fight.winner_name ? `${fight.winner_name} wins by ${fight.method}.` : `Result: ${fight.method}.`,
     }));
     if (client) {
-      if (!fights.length) throw new Error('Refusing to publish an empty card.');
+      if (!fights.length && !disrupted) throw new Error('Refusing to publish an empty card.');
+      const previous = !event.starts_at ? await checked(client.from('event').select('date')
+        .eq('id', eventId).maybeSingle()) : null;
+      const date = event.starts_at ?? previous?.date;
+      if (!date) throw new Error('UFCalendar event has no known date.');
       await upsert(client, 'fighter', [...fighters.values()].filter(row => !profile || row.id !== idFor('fighter', lead.id)));
       if (profile) await upsert(client, 'fighter', [fighters.get(lead.id)]);
       await upsert(client, 'event', [{
         id: eventId, name: event.title, discipline: 'MMA', organization: 'UFC',
-        date: event.starts_at, status, venue: event.venue?.name ?? null,
+        date, status, venue: event.venue?.name ?? null,
         main_card_at: event.main_card_at ?? null, prelims_at: event.prelims_at ?? null,
         early_prelims_at: event.early_prelims_at ?? null,
         location: [event.venue?.city, event.venue?.country].filter(Boolean).join(', '),
