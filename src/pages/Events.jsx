@@ -19,17 +19,25 @@ export default function Events() {
     queryFn: () => base44.entities.Event.list('-date', 100),
   });
 
-  const { data: fights = [] } = useQuery({
+  const { data: fights = [], isLoading: fightsLoading } = useQuery({
     queryKey: ['all-fights-events-page'],
     queryFn: () => base44.entities.Fight.list('order', 100),
   });
 
-  const { data: fighters = [] } = useQuery({
-    queryKey: ['fighters-events-page'],
-    queryFn: () => base44.entities.Fighter.list('name', 50),
+  const fighterIds = [...new Set(fights.flatMap(fight => [fight.fighter_a_id, fight.fighter_b_id]).filter(Boolean))].sort();
+  const legacyNames = [...new Set(fights.flatMap(fight => [
+    !fight.fighter_a_id && fight.fighter_a_name, !fight.fighter_b_id && fight.fighter_b_name,
+  ]).filter(Boolean))].sort();
+  const { data: fighters = [], isLoading: fightersLoading } = useQuery({
+    queryKey: ['fighters-events-page', fighterIds, legacyNames],
+    enabled: fighterIds.length > 0 || legacyNames.length > 0,
+    queryFn: async () => (await Promise.all([
+      base44.entities.Fighter.byIds(fighterIds),
+      ...legacyNames.map(name => base44.entities.Fighter.filter({ name }, 'name', 1)),
+    ])).flat(),
   });
 
-  const isLoading = eventsLoading;
+  const isLoading = eventsLoading || fightsLoading || fightersLoading;
 
   // Categorize all events through verification
   const { verified, partial, needsReview } = categorizeEvents(eventsRaw, fights, fighters);
