@@ -229,7 +229,7 @@ export default function FightDetail() {
         <div className="flex items-center gap-4">
           {/* Fighter A */}
           <div className={cn("flex-1 flex flex-col items-center gap-3 text-center", bWon && "opacity-40")}>
-            <FighterAvatar fighter={fighterA || { name: fight.fighter_a_name }} size="xl" />
+            <FighterAvatar fighter={fighterA || { name: fight.fighter_a_name }} size="xl" officialUfc={isUfc} />
             {aWon && <Crown className="w-5 h-5 text-amber-400" />}
             <div>
               <p className={cn("font-heading text-lg md:text-2xl font-bold uppercase tracking-wide leading-tight", aWon && "text-primary")}>
@@ -257,7 +257,7 @@ export default function FightDetail() {
 
           {/* Fighter B */}
           <div className={cn("flex-1 flex flex-col items-center gap-3 text-center", aWon && "opacity-40")}>
-            <FighterAvatar fighter={fighterB || { name: fight.fighter_b_name }} size="xl" />
+            <FighterAvatar fighter={fighterB || { name: fight.fighter_b_name }} size="xl" officialUfc={isUfc} />
             {bWon && <Crown className="w-5 h-5 text-amber-400" />}
             <div>
               <p className={cn("font-heading text-lg md:text-2xl font-bold uppercase tracking-wide leading-tight", bWon && "text-primary")}>

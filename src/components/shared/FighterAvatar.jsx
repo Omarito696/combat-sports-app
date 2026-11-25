@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import { resolveFighterImage, fetchWikipediaPortrait } from '@/lib/fighterImage';
+import { resolveFighterImage, fetchWikipediaPortrait, requiresUfcHeadshot } from '@/lib/fighterImage';
 
 const SIZES = {
   xs: 'w-8 h-8 text-xs',
@@ -10,9 +10,10 @@ const SIZES = {
   xl: 'w-28 h-28 text-2xl',
 };
 
-export default function FighterAvatar({ fighter, size = 'md', className, showSource = false }) {
+export default function FighterAvatar({ fighter, size = 'md', className, showSource = false, officialUfc = false }) {
   const name = fighter?.name || '?';
-  const { url: staticUrl, source: staticSource } = resolveFighterImage(fighter);
+  const strict = officialUfc || requiresUfcHeadshot(fighter);
+  const { url: staticUrl, source: staticSource } = resolveFighterImage(fighter, strict);
 
   const [resolvedUrl, setResolvedUrl] = useState(staticUrl);
   const [source, setSource] = useState(staticSource);
@@ -26,11 +27,11 @@ export default function FighterAvatar({ fighter, size = 'md', className, showSou
       setSource(null);
       return;
     }
-    const { url, source: src } = resolveFighterImage(fighter);
+    const { url, source: src } = resolveFighterImage(fighter, strict);
     if (url) {
       setResolvedUrl(url);
       setSource(src);
-    } else if (name && name !== '?') {
+    } else if (!strict && name && name !== '?') {
       // Fallback: fetch Wikipedia portrait
       fetchWikipediaPortrait(name).then(wikiUrl => {
         setResolvedUrl(wikiUrl);
@@ -40,9 +41,10 @@ export default function FighterAvatar({ fighter, size = 'md', className, showSou
       setResolvedUrl(null);
       setSource(null);
     }
-  }, [fighter?.preferred_profile_image_url, fighter?.image_url, name]);
+  }, [fighter?.preferred_profile_image_url, fighter?.image_url, fighter?.image_source, fighter?.image_source_type,
+    fighter?.image_confidence, fighter?.image_pending_review, name, strict]);
 
-  const displayUrl = imgError ? null : resolvedUrl;
+  const displayUrl = imgError ? null : strict ? staticUrl : resolvedUrl;
   const initials = name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
 
   return (
@@ -66,9 +68,9 @@ export default function FighterAvatar({ fighter, size = 'md', className, showSou
           {initials}
         </div>
       )}
-      {showSource && source && (
+      {showSource && displayUrl && (strict ? staticSource : source) && (
         <span className="absolute -bottom-1 -right-1 text-[8px] bg-background border border-border/60 px-1 rounded-full text-muted-foreground leading-none py-0.5">
-          {source}
+          {strict ? staticSource : source}
         </span>
       )}
     </div>

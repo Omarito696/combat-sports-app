@@ -6,6 +6,7 @@ import { ChevronRight, Flame, Calendar, Trophy, Clock, Building2 } from 'lucide-
 import { Skeleton } from '@/components/ui/skeleton';
 import { format, isSameDay, parseISO, startOfDay, addDays } from 'date-fns';
 import FighterAvatar from '@/components/shared/FighterAvatar';
+import { requiresUfcHeadshot } from '@/lib/fighterImage';
 import DisciplineBadge from '@/components/shared/DisciplineBadge';
 import { cn } from '@/lib/utils';
 import { categorizeFights, categorizeEvents, filterDisplayableUpcomingFights } from '@/lib/dataGating';
@@ -33,7 +34,7 @@ function FightRow({ fight, event, fighters }) {
           </p>
           {fighterA && <p className="text-[9px] text-muted-foreground">{fighterA.wins}-{fighterA.losses}</p>}
         </div>
-        <FighterAvatar fighter={fighterA || { name: fight.fighter_a_name }} size="sm" />
+        <FighterAvatar fighter={fighterA || { name: fight.fighter_a_name }} size="sm" officialUfc={requiresUfcHeadshot(event, fight)} />
       </div>
 
       {/* Center */}
@@ -59,7 +60,7 @@ function FightRow({ fight, event, fighters }) {
 
       {/* Fighter B */}
       <div className={cn('flex items-center gap-2 flex-1', isCompleted && !bWon && 'opacity-40')}>
-        <FighterAvatar fighter={fighterB || { name: fight.fighter_b_name }} size="sm" />
+        <FighterAvatar fighter={fighterB || { name: fight.fighter_b_name }} size="sm" officialUfc={requiresUfcHeadshot(event, fight)} />
         <div className="hidden sm:block">
           <p className={cn('font-heading text-sm font-bold uppercase tracking-wide truncate max-w-[100px]', bWon && 'text-primary')}>
             {fight.fighter_b_name?.split(' ').pop()}
@@ -315,7 +316,7 @@ export default function Home() {
                       className="rounded-xl border border-border/60 bg-card/50 p-4 text-left hover:border-primary/30 hover:bg-card/80 transition-all group"
                     >
                       <div className="flex items-center gap-3 mb-2">
-                        <FighterAvatar fighter={fighterA || { name: fight.fighter_a_name }} size="sm" />
+                        <FighterAvatar fighter={fighterA || { name: fight.fighter_a_name }} size="sm" officialUfc={requiresUfcHeadshot(event, fight)} />
                         <div className="flex-1 min-w-0">
                           <p className="font-heading text-sm font-bold uppercase tracking-wide truncate">
                             {fight.fighter_a_name} <span className="text-primary">vs</span> {fight.fighter_b_name}
@@ -325,7 +326,7 @@ export default function Home() {
                             {event && <span className="text-[9px] text-muted-foreground">{event.organization || event.name}</span>}
                           </div>
                         </div>
-                        <FighterAvatar fighter={fighterB || { name: fight.fighter_b_name }} size="sm" />
+                        <FighterAvatar fighter={fighterB || { name: fight.fighter_b_name }} size="sm" officialUfc={requiresUfcHeadshot(event, fight)} />
                       </div>
                       {event?.date && (
                         <p className="text-[10px] text-muted-foreground flex items-center gap-1">
