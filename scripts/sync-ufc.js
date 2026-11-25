@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { fileURLToPath } from 'node:url';
 import { createClient } from '@supabase/supabase-js';
 import { loadEnv } from 'vite';
 import { fightOutcome } from '../src/lib/fightOutcome.js';
@@ -53,7 +54,7 @@ function fighterRow(fighter, division, profile) {
   };
 }
 
-function fightRow(bout, eventId, url) {
+export function fightRow(bout, eventId, url) {
   const { fighter_a: a, fighter_b: b, result } = bout;
   const method = bout.status === 'no_contest' ? 'No contest' : result?.method ?? null;
   const reportedWinner = [a, b].find(fighter => fighter.id === result?.winner_fighter_id);
@@ -76,6 +77,21 @@ function fightRow(bout, eventId, url) {
     result_source_url: hasResult ? url : null, result_source_type: hasResult ? source : null,
     result_confidence: hasResult ? 'medium' : 'low', card_source_url: url, card_source_type: source,
   };
+}
+
+export function resultTickerRows(fights) {
+  return fights.filter(fight => fight.status === 'completed' && fight.method).map(fight => ({
+    id: idFor('result', fight.id), fight_id: fight.id, type: 'fight_end',
+    round: fight.finish_round, time: fight.finish_time, fighter_name: fight.winner_name,
+    description: fightOutcome(fight)?.corner && fight.winner_name
+      ? `${fight.winner_name} wins by ${fight.method}.` : `Result: ${fight.method}.`,
+  }));
+}
+
+export function removedBoutIds(existing, fights) {
+  const received = new Set(fights.map(fight => fight.id));
+  return existing.filter(fight => ['scheduled', 'live'].includes(fight.status) && !received.has(fight.id))
+    .map(fight => fight.id);
 }
 
 async function writer() {
@@ -206,12 +222,7 @@ async function sync() {
     const disrupted = ['cancelled', 'postponed'].includes(status);
     const fights = bouts.map(bout => fightRow(disrupted && !bout.result
       ? { ...bout, status: 'cancelled' } : bout, eventId, url));
-    const ticker = fights.filter(fight => fight.status === 'completed' && fight.method).map(fight => ({
-      id: idFor('result', fight.id), fight_id: fight.id, type: 'fight_end',
-      round: fight.finish_round, time: fight.finish_time, fighter_name: fight.winner_name,
-      description: fightOutcome(fight)?.corner && fight.winner_name
-        ? `${fight.winner_name} wins by ${fight.method}.` : `Result: ${fight.method}.`,
-    }));
+    const ticker = resultTickerRows(fights);
     if (client) {
       if (!fights.length && !disrupted) throw new Error('Refusing to publish an empty card.');
       const previous = !event.starts_at ? await checked(client.from('event').select('date')
@@ -233,16 +244,17 @@ async function sync() {
       await upsert(client, 'fight_event', ticker);
       const existing = await checked(client.from('fight').select('id,status').eq('event_id', eventId)
         .like('card_source_url', `${origin}/events/%`));
-      const received = new Set(fights.map(fight => fight.id));
-      const removed = existing.filter(fight => ['scheduled', 'live'].includes(fight.status) && !received.has(fight.id));
-      if (removed.length) await checked(client.from('fight').update({ status: 'cancelled' }).in('id', removed.map(fight => fight.id)));
+      const removed = removedBoutIds(existing, fights);
+      if (removed.length) await checked(client.from('fight').update({ status: 'cancelled' }).in('id', removed));
     }
     console.log(`${publish ? 'Synced' : 'Verified'} ${slug}: ${fights.length} bouts, ${fighters.size} fighters, ${ticker.length} result entries.`);
   }
   console.log(`UFCalendar calls: ${providerCalls}.`);
 }
 
-sync().catch(error => {
-  console.error(error.message);
-  process.exitCode = 1;
-});
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  sync().catch(error => {
+    console.error(error.message);
+    process.exitCode = 1;
+  });
+}

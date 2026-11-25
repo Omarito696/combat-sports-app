@@ -13,6 +13,7 @@ export function createRealEntities(client, tables) {
     };
     return [name, {
       list: (sort, limit) => filter({}, sort, limit), filter,
+      byIds: ids => ids.length ? unwrap(client.from(table).select('*').in('id', ids)) : Promise.resolve([]),
       create(input) { rejectSimulation(input); return unwrap(client.from(table).insert(input).select().single()); },
       update(id, input) { rejectSimulation(input); return unwrap(client.from(table).update(input).eq('id', id).select().single()); },
     }];

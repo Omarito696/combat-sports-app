@@ -28,12 +28,20 @@ export default function EventDetail() {
     refetchInterval: event?.status === 'live' ? 30000 : false,
   });
 
-  const { data: fighters = [] } = useQuery({
-    queryKey: ['fighters-event-detail'],
-    queryFn: () => base44.entities.Fighter.list('name', 50),
+  const fighterIds = [...new Set(fights.flatMap(fight => [fight.fighter_a_id, fight.fighter_b_id]).filter(Boolean))].sort();
+  const legacyNames = [...new Set(fights.flatMap(fight => [
+    !fight.fighter_a_id && fight.fighter_a_name, !fight.fighter_b_id && fight.fighter_b_name,
+  ]).filter(Boolean))].sort();
+  const { data: fighters = [], isLoading: fightersLoading } = useQuery({
+    queryKey: ['fighters-event-detail', fighterIds, legacyNames],
+    enabled: fighterIds.length > 0 || legacyNames.length > 0,
+    queryFn: async () => (await Promise.all([
+      base44.entities.Fighter.byIds(fighterIds),
+      ...legacyNames.map(name => base44.entities.Fighter.filter({ name }, 'name', 1)),
+    ])).flat(),
   });
 
-  if (eventLoading || fightsLoading) {
+  if (eventLoading || fightsLoading || fightersLoading) {
     return (
       <div className="space-y-6">
         <Skeleton className="h-8 w-40" />
