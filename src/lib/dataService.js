@@ -132,11 +132,11 @@ export async function fetchFighterImage(name) {
 // External sources (Wikipedia, TheSportsDB) only fill in MISSING fields —
 // they never overwrite existing verified data.
 
-export async function getFighterProfile(fighterName) {
-  // 1. Load all DB fighters and find exact match by name
-  const allDbFighters = await base44.entities.Fighter.list('name', 500);
+export async function getFighterProfile(fighterName, fighterId) {
+  const [linked] = await base44.entities.Fighter.filter(fighterId ? { id: fighterId } : { name: fighterName }, 'name', 1);
+  const allDbFighters = linked ? [] : await base44.entities.Fighter.list('name', 500);
   // Exact name match first, then partial
-  const db = allDbFighters.find(f => f.name.toLowerCase() === fighterName.toLowerCase())
+  const db = linked || allDbFighters.find(f => f.name.toLowerCase() === fighterName.toLowerCase())
     || allDbFighters.find(f => f.name.toLowerCase().includes(fighterName.toLowerCase()))
     || null;
 
@@ -177,6 +177,10 @@ export async function getFighterProfile(fighterName) {
     nationality: db?.nationality || null,
     discipline: db?.discipline || 'MMA',
     weight_class: db?.weight_class || null,
+    height_cm: db?.height_cm ?? null,
+    reach_cm: db?.reach_cm ?? null,
+    profile_weight_lbs: db?.profile_weight_lbs ?? null,
+    record_source_url: db?.record_source_url ?? null,
     // Records ONLY from DB — never from external source
     wins: db?.wins ?? null,
     losses: db?.losses ?? null,
@@ -217,7 +221,7 @@ export async function getUpcomingEvents({ discipline, organization } = {}) {
   const allEvents = await base44.entities.Event.list('date', 200);
   let upcoming = allEvents.filter(e => {
     if (!e.date) return false;
-    if (e.status === 'completed') return false;
+    if (['completed', 'cancelled', 'postponed'].includes(e.status)) return false;
     return new Date(e.date) >= today;
   });
 

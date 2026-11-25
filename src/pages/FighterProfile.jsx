@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { getFighterProfile, getRecentNews, getRecentVideos } from '@/lib/dataService';
@@ -126,12 +126,15 @@ function FighterHeroImage({ fighter }) {
 
 export default function FighterProfile() {
   const { name } = useParams();
+  const [searchParams] = useSearchParams();
+  const requestedId = searchParams.get('id');
+  const fighterId = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(requestedId ?? '') ? requestedId : null;
   const decodedName = decodeURIComponent(name);
   const [activeTab, setActiveTab] = useState('overview');
 
   const { data: profile, isLoading: profileLoading, error: profileError } = useQuery({
-    queryKey: ['fighter-profile', decodedName],
-    queryFn: () => getFighterProfile(decodedName),
+    queryKey: ['fighter-profile', decodedName, fighterId],
+    queryFn: () => getFighterProfile(decodedName, fighterId),
     retry: 1,
   });
 

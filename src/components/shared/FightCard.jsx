@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils';
+import { Link } from 'react-router-dom';
 import StatusBadge from './StatusBadge';
 import FighterAvatar from './FighterAvatar';
 import DisciplineBadge from './DisciplineBadge';
@@ -19,8 +20,8 @@ export default function FightCard({ fight, event, verificationTier, fighters = [
   const fighterB = fighters.find(f => f.name === fight.fighter_b_name) || { name: fight.fighter_b_name };
 
   return (
-    <div className={cn(
-      "relative rounded-xl border border-border/60 bg-card/50 backdrop-blur-sm overflow-hidden transition-all duration-300 hover:border-border",
+    <Link to={`/fights/${fight.id}`} className={cn(
+      "block relative rounded-xl border border-border/60 bg-card/50 backdrop-blur-sm overflow-hidden transition-all duration-300 hover:border-border",
       fight.is_main_event && "border-primary/30 bg-primary/[0.02]",
       fight.status === 'live' && "border-red-500/40 shadow-[0_0_20px_rgba(239,68,68,0.08)]"
     )}>
@@ -127,6 +128,6 @@ export default function FightCard({ fight, event, verificationTier, fighters = [
           </div>
         )}
       </div>
-    </div>
+    </Link>
   );
 }

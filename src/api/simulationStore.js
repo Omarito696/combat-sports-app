@@ -13,6 +13,7 @@ export function createSimulationEntities(storage, tables) {
     };
     return [name, {
       list: (sort, limit) => filter({}, sort, limit), filter,
+      async byIds(ids) { return (load()[name] || []).filter(row => ids.includes(row.id)); },
       async create(input) { const data = load(); const row = { ...input, id: crypto.randomUUID(), created_date: new Date().toISOString(), data_origin: 'simulation' }; (data[name] ||= []).push(row); save(data); return row; },
       async update(id, input) { const data = load(); const row = data[name]?.find(r => r.id === id); if (!row) throw new Error('Simulation record not found'); Object.assign(row, input, {id, data_origin:'simulation'}); save(data); return row; },
     }];

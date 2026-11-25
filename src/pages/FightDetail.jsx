@@ -233,7 +233,7 @@ export default function FightDetail() {
             {aWon && <Crown className="w-5 h-5 text-amber-400" />}
             <div>
               <p className={cn("font-heading text-lg md:text-2xl font-bold uppercase tracking-wide leading-tight", aWon && "text-primary")}>
-                {fight.fighter_a_name}
+                {fighterA ? <Link className="hover:underline" to={`/fighters/${encodeURIComponent(fighterA.name)}?id=${encodeURIComponent(fighterA.id)}`}>{fighterA.name}</Link> : fight.fighter_a_name}
               </p>
               {fighterA && <p className="text-sm text-muted-foreground mt-0.5">{fighterA.wins}-{fighterA.losses}{fighterA.draws ? `-${fighterA.draws}` : ''}</p>}
               {fighterA?.nationality && <p className="text-xs text-muted-foreground">{fighterA.nationality}</p>}
@@ -261,7 +261,7 @@ export default function FightDetail() {
             {bWon && <Crown className="w-5 h-5 text-amber-400" />}
             <div>
               <p className={cn("font-heading text-lg md:text-2xl font-bold uppercase tracking-wide leading-tight", bWon && "text-primary")}>
-                {fight.fighter_b_name}
+                {fighterB ? <Link className="hover:underline" to={`/fighters/${encodeURIComponent(fighterB.name)}?id=${encodeURIComponent(fighterB.id)}`}>{fighterB.name}</Link> : fight.fighter_b_name}
               </p>
               {fighterB && <p className="text-sm text-muted-foreground mt-0.5">{fighterB.wins}-{fighterB.losses}{fighterB.draws ? `-${fighterB.draws}` : ''}</p>}
               {fighterB?.nationality && <p className="text-xs text-muted-foreground">{fighterB.nationality}</p>}
