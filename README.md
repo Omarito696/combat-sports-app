@@ -36,6 +36,10 @@ Use `--refresh` to check the current or next card and the latest completed card 
 
 For detailed statistics, run `node scripts/sync-ufc.js --stats <UFCalendar bout ID> --publish` after importing the completed bout. Pass up to two IDs. Publishing uses two calls for a finish and three for a decision. The daily card refresh preserves previously published stats and does not spend quota on the stats backfill.
 
+An app catalog admin can post authorized observations on a scheduled or live UFC fight page. The ticker checks the app database every five seconds during the event window or while the bout is live. These checks use no UFCalendar requests. The provider refresh continues to supply confirmed results.
+
+To check confirmed results sooner on fight night, run the UFC catalog refresh workflow with the UFCalendar event slug. The targeted run uses one provider request.
+
 ## Checks
 
 - `npm test`: simulation persistence and prevention of simulated writes through the real adapter.

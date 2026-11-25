@@ -23,6 +23,7 @@
         "knockdown",
         "cut",
         "point_deduction",
+        "round_start",
         "round_end",
         "fight_end",
         "other"

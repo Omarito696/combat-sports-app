@@ -18,6 +18,7 @@ const EVENT_TYPE_STYLES = {
   knockdown: { color: 'text-red-400', bg: 'bg-red-500/10 border-red-500/20', icon: Zap },
   cut: { color: 'text-red-300', bg: 'bg-red-500/5 border-red-500/15', icon: Zap },
   point_deduction: { color: 'text-yellow-400', bg: 'bg-yellow-500/10 border-yellow-500/20', icon: Shield },
+  round_start: { color: 'text-muted-foreground', bg: 'bg-muted/30 border-border/40', icon: Clock },
   round_end: { color: 'text-muted-foreground', bg: 'bg-muted/30 border-border/40', icon: Clock },
   fight_end: { color: 'text-primary', bg: 'bg-primary/10 border-primary/20', icon: Crown },
   other: { color: 'text-foreground/70', bg: 'bg-card/50 border-border/40', icon: Radio },
@@ -30,7 +31,7 @@ function CommentaryTicker({ events }) {
   }, [events.length]);
 
   return (
-    <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1">
+    <div role="log" aria-label="Fight updates" className="space-y-2 max-h-[400px] overflow-y-auto pr-1">
       <AnimatePresence initial={false}>
         {events.map((ev) => {
           const style = EVENT_TYPE_STYLES[ev.type] || EVENT_TYPE_STYLES.other;
@@ -64,7 +65,8 @@ function CommentaryTicker({ events }) {
   );
 }
 
-function AddCommentaryForm({ fightId, isAdmin }) {
+function AddCommentaryForm({ fight, confirmedResultsFeed }) {
+  const fightId = fight.id;
   const qc = useQueryClient();
   const [text, setText] = useState('');
   const [round, setRound] = useState(1);
@@ -76,33 +78,42 @@ function AddCommentaryForm({ fightId, isAdmin }) {
     mutationFn: (data) => base44.entities.FightEvent.create(data),
     onSuccess: () => { qc.invalidateQueries(['fight-events', fightId]); setText(''); setTime(''); },
   });
-
-
-  if (!isAdmin) return null;
+  const validTime = !confirmedResultsFeed || !time.trim() || /^(?:[0-4]:[0-5]\d|5:00)$/.test(time.trim());
+  const maxRounds = fight.rounds || 5;
+  const canPost = text.trim() && text.trim().length <= 500 && validTime
+    && Number.isInteger(round) && round >= 1 && round <= maxRounds && !createMutation.isPending;
 
   return (
-    <div className="rounded-xl border border-border/60 bg-card/60 p-4 space-y-3">
-      <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Add Commentary Event</p>
+    <form onSubmit={e => {
+      e.preventDefault();
+      if (canPost) createMutation.mutate({ fight_id: fightId, round, time: time.trim() || null, type, fighter_name: fighter || null, description: text.trim() });
+    }} className="rounded-xl border border-border/60 bg-card/60 p-4 space-y-3">
+      <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Post an Observed Fight Update</p>
       <div className="flex gap-2">
-        <select value={type} onChange={e => setType(e.target.value)} className="flex-1 bg-background border border-border/60 rounded-lg px-3 py-2 text-sm">
-          {Object.keys(EVENT_TYPE_STYLES).map(t => <option key={t} value={t}>{t.replace('_', ' ')}</option>)}
+        <select aria-label="Update type" value={type} onChange={e => setType(e.target.value)} className="flex-1 bg-background border border-border/60 rounded-lg px-3 py-2 text-sm">
+          {Object.keys(EVENT_TYPE_STYLES).filter(t => !confirmedResultsFeed || t !== 'fight_end').map(t => <option key={t} value={t}>{t.replaceAll('_', ' ')}</option>)}
         </select>
-        <input value={round} onChange={e => setRound(Number(e.target.value))} type="number" min={1} max={5} placeholder="Rnd" className="w-16 bg-background border border-border/60 rounded-lg px-3 py-2 text-sm" />
-        <input value={time} onChange={e => setTime(e.target.value)} placeholder="2:34" className="w-20 bg-background border border-border/60 rounded-lg px-3 py-2 text-sm" />
+        <input aria-label="Round" value={round} onChange={e => setRound(Number(e.target.value))} type="number" min={1} max={maxRounds} placeholder="Rnd" className="w-16 bg-background border border-border/60 rounded-lg px-3 py-2 text-sm" />
+        <input aria-label="Round clock, minutes and seconds" value={time} onChange={e => setTime(e.target.value)} placeholder="2:34" className="w-20 bg-background border border-border/60 rounded-lg px-3 py-2 text-sm" />
       </div>
-      <input value={fighter} onChange={e => setFighter(e.target.value)} placeholder="Fighter name (optional)" className="w-full bg-background border border-border/60 rounded-lg px-3 py-2 text-sm" />
+      <select aria-label="Fighter" value={fighter} onChange={e => setFighter(e.target.value)} className="w-full bg-background border border-border/60 rounded-lg px-3 py-2 text-sm">
+        <option value="">Fighter optional</option>
+        <option>{fight.fighter_a_name}</option>
+        <option>{fight.fighter_b_name}</option>
+      </select>
       <div className="flex gap-2">
-        <textarea value={text} onChange={e => setText(e.target.value)} placeholder="Describe what just happened..." rows={2} className="flex-1 bg-background border border-border/60 rounded-lg px-3 py-2 text-sm resize-none" />
+        <textarea aria-label="Update text" maxLength={500} value={text} onChange={e => setText(e.target.value)} placeholder="Describe what just happened..." rows={2} className="flex-1 bg-background border border-border/60 rounded-lg px-3 py-2 text-sm resize-none" />
 
       </div>
-      <button
-        onClick={() => createMutation.mutate({ fight_id: fightId, round, time, type, fighter_name: fighter, description: text })}
-        disabled={!text.trim()}
+      {!validTime && <p className="text-sm text-red-400">Enter a round clock between 0:00 and 5:00.</p>}
+      {createMutation.isError && <p role="alert" className="text-sm text-red-400">The update couldn’t be posted. Check access and try again.</p>}
+      <button type="submit"
+        disabled={!canPost}
         className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-bold disabled:opacity-50 flex items-center justify-center gap-2"
       >
-        <Send className="w-4 h-4" /> Post Event
+        <Send className="w-4 h-4" /> {createMutation.isPending ? 'Posting…' : 'Post update'}
       </button>
-    </div>
+    </form>
   );
 }
 
@@ -131,10 +142,22 @@ export default function FightDetail() {
       return row;
     })),
   });
-  const { data: fightEvents = [] } = useQuery({
+  const cardTime = Date.parse(event?.early_prelims_at || event?.prelims_at || event?.date);
+  const isEventWindow = () => {
+    const sinceCardStart = Date.now() - cardTime;
+    return sinceCardStart >= -15 * 60000 && sinceCardStart < 8 * 3600000;
+  };
+  const watchUpdates = fight?.status === 'live'
+    || (fight?.status === 'scheduled' && isEventWindow());
+  const { data: fightEvents = [], isError: tickerError } = useQuery({
     queryKey: ['fight-events', id],
-    queryFn: () => base44.entities.FightEvent.filter({ fight_id: id }, 'created_date', 200),
-    refetchInterval: fight?.status === 'live' ? 5000 : false,
+    queryFn: () => base44.entities.FightEvent.filter({ fight_id: id }, '-created_date', 200),
+    refetchInterval: query => {
+      if (fight?.status === 'live') return 5000;
+      if (fight?.status === 'scheduled') return isEventWindow() ? 5000 : 30000;
+      return fight?.status === 'completed' && isEventWindow()
+        && !query.state.data?.some(entry => entry.type === 'fight_end') ? 5000 : false;
+    },
   });
 
   useEffect(() => {
@@ -290,21 +313,22 @@ export default function FightDetail() {
           {isLive && <span className="text-[10px] font-bold bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full border border-red-500/30 animate-pulse">LIVE</span>}
         </div>
 
+        {tickerError && <p role="status" className="mb-2 text-sm text-muted-foreground">Fight updates are temporarily unavailable.</p>}
         {fightEvents.length > 0 ? (
           <CommentaryTicker events={[...fightEvents].reverse()} />
         ) : (
           <div className="flex flex-col items-center justify-center py-10 gap-2 rounded-xl border border-border/40 bg-card/30">
             <Radio className="w-8 h-8 text-muted-foreground/20" />
-            <p className="text-sm text-muted-foreground">{isResultsFeed
+            <p className="text-sm text-muted-foreground">{watchUpdates ? 'Waiting for fight updates.' : isResultsFeed
               ? 'Confirmed results appear after the next catalog refresh.'
               : isLive ? 'Waiting for first event...' : 'No commentary recorded for this fight.'}</p>
           </div>
         )}
 
         {/* Admin commentary input */}
-        {isAdmin && (
+        {isAdmin && (!isResultsFeed || ['scheduled', 'live'].includes(fight.status)) && (
           <div className="mt-4">
-            <AddCommentaryForm fightId={id} isAdmin={isAdmin} />
+            <AddCommentaryForm key={id} fight={fight} confirmedResultsFeed={isResultsFeed} />
           </div>
         )}
       </section>
