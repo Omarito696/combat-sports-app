@@ -42,6 +42,8 @@ To check confirmed results sooner on fight night, run the UFC catalog refresh wo
 
 The workflow also accepts space-separated `bout_ids` for up to two completed bouts or `fighter_ids` for up to six fighters already in the UFC catalog. Profile refreshes use one request per fighter and preserve existing values where the source omits a field. Leave the other inputs blank.
 
+Near the monthly cap, the scheduled run holds back one request per remaining UTC day for schedule discovery. It refreshes card details when quota permits, prioritizing a live or recently completed event.
+
 ## Checks
 
 - `npm test`: simulation persistence and prevention of simulated writes through the real adapter.

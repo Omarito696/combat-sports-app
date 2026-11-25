@@ -12,6 +12,7 @@ const profilesOnly = process.argv.includes('--profiles');
 const source = 'sports_db';
 const origin = 'https://www.ufcalendar.com';
 let providerCalls = 0;
+let remainingRequests = null;
 
 function idFor(type, id) {
   if (id == null) throw new Error('Provider record is missing its ID.');
@@ -31,7 +32,15 @@ async function get(path) {
   }
   const payload = await response.json();
   if (payload.data == null) throw new Error('UFCalendar returned no data.');
+  const remaining = response.headers.get('x-ratelimit-remaining');
+  remainingRequests = remaining !== null && /^\d+$/.test(remaining) ? Number(remaining) : null;
   return payload.data;
+}
+
+export function detailRequestBudget(remaining, now) {
+  if (remaining === null) return 2;
+  const daysInMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0)).getUTCDate();
+  return Math.max(0, Math.min(2, remaining - (daysInMonth - now.getUTCDate())));
 }
 
 function fighterRow(fighter, division, profile) {
@@ -215,7 +224,10 @@ async function sync() {
     const laterCards = live ? upcoming : upcoming.slice(1);
     const day = Math.floor(now.getTime() / 86_400_000);
     const secondary = changed ?? completed ?? (laterCards.length ? laterCards[day % laterCards.length] : null);
-    ids.push(...[active?.slug, secondary?.slug].filter(Boolean));
+    const budget = detailRequestBudget(remainingRequests, now);
+    const priority = live ? [active, secondary] : [changed ?? completed, active, secondary];
+    ids.push(...[...new Set(priority.map(event => event?.slug).filter(Boolean))].slice(0, budget));
+    if (!budget) console.log('Skipping card details to reserve requests for the remaining daily schedule checks.');
   } else if (!ids.length) {
     for (const status of ['upcoming', 'completed']) {
       const events = await get(`events?org=ufc&status=${status}&limit=1`);
